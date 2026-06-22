@@ -1,0 +1,197 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// --- Enums ---
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ProjectStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// --- Models ---
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  refreshToken String?
+  role         Role          @default(MEMBER)
+  status       String        @default("ACTIVE")
+  createdAt    DateTime      @default(now())
+
+  // Profile နဲ့ 1-to-1 ချိတ်ဆက်ခြင်း
+  profile        Profile?
+
+  workspaceUsers WorkspaceUser[]
+  projects       Project[]     @relation("CreatedProjects")
+  projectUsers   ProjectUser[]
+  notifications  Notification[]
+  userNotis      UserNoti[]
+  activityLogs   ActivityLog[]
+  invitations    Invitation[]  @relation("InvitedBy")
+  invitedTo      Invitation[]  @relation("InvitedTo")
+}
+
+model Profile {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  avatar    String?
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Workspace {
+  id            Int          @id @default(autoincrement())
+  name          String
+  logo          String?
+  ownerId       Int
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  workspaceUsers WorkspaceUser[]
+  projects       Project[]
+  tasks          Task[]
+  invitations    Invitation[]
+  notifications  Notification[]
+  activityLogs   ActivityLog[]
+}
+
+model WorkspaceUser {
+  id          Int       @id @default(autoincrement())
+  workspaceId Int
+  userId      Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model Project {
+  id          Int           @id @default(autoincrement())
+  workspaceId Int
+  createBy    Int
+  name        String
+  description String?
+  status      ProjectStatus @default(PENDING)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime      @default(now())
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  creator      User          @relation("CreatedProjects", fields: [createBy], references: [id])
+  projectUsers ProjectUser[]
+  tasks        Task[]
+}
+
+model ProjectUser {
+  id        Int     @id @default(autoincrement())
+  projectId Int
+  userId    Int
+  project   Project @relation(fields: [projectId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  workspaceId Int
+  projectId   Int
+  assignedTo  Int
+  title       String
+  description String?
+  priority    Priority   @default(MEDIUM)
+  status      TaskStatus @default(PENDING)
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  comments  Comment[]
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  workspaceId Int
+  taskId      Int
+  authorId    Int
+  content     String
+  createdAt   DateTime @default(now())
+  task        Task     @relation(fields: [taskId], references: [id])
+}
+
+model Notification {
+  id          Int       @id @default(autoincrement())
+  workspaceId Int
+  userId      Int
+  message     String
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id])
+  user      User         @relation(fields: [userId], references: [id])
+  userNotis UserNoti[]
+}
+
+model UserNoti {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  notificationId Int
+  user           User         @relation(fields: [userId], references: [id])
+  notification   Notification @relation(fields: [notificationId], references: [id])
+}
+
+model ActivityLog {
+  id          Int       @id @default(autoincrement())
+  workspaceId Int
+  userId      Int
+  action      String
+  entityType  String
+  entityId    Int
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model Invitation {
+  id          Int              @id @default(autoincrement())
+  workspaceId Int
+  email       String
+  role        Role             @default(MEMBER)
+  status      InvitationStatus @default(PENDING)
+  invitedBy   Int
+  invitedTo   Int?
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id])
+  sender      User             @relation("InvitedBy", fields: [invitedBy], references: [id])
+  receiver    User?            @relation("InvitedTo", fields: [invitedTo], references: [id])
+}
