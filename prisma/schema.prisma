@@ -51,8 +51,6 @@ model User {
   role         Role          @default(MEMBER)
   status       String        @default("ACTIVE")
   createdAt    DateTime      @default(now())
-
-  // Profile နဲ့ 1-to-1 ချိတ်ဆက်ခြင်း
   profile        Profile?
 
   workspaceUsers WorkspaceUser[]
@@ -71,6 +69,9 @@ model Profile {
   avatar    String?
   userId    Int      @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId Int?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+ 
 }
 
 model Workspace {
@@ -80,7 +81,7 @@ model Workspace {
   ownerId       Int
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-
+  profile       Profile[]
   workspaceUsers WorkspaceUser[]
   projects       Project[]
   tasks          Task[]
@@ -93,7 +94,7 @@ model WorkspaceUser {
   id          Int       @id @default(autoincrement())
   workspaceId Int
   userId      Int
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspace   Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id])
 }
 
@@ -108,7 +109,7 @@ model Project {
   endDate     DateTime?
   createdAt   DateTime      @default(now())
 
-  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   creator      User          @relation("CreatedProjects", fields: [createBy], references: [id])
   projectUsers ProjectUser[]
   tasks        Task[]
@@ -134,7 +135,7 @@ model Task {
   dueDate     DateTime?
   createdAt   DateTime   @default(now())
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   project   Project   @relation(fields: [projectId], references: [id])
   comments  Comment[]
 }
@@ -157,7 +158,7 @@ model Notification {
   isRead      Boolean   @default(false)
   createdAt   DateTime  @default(now())
 
-  workspace Workspace    @relation(fields: [workspaceId], references: [id])
+  workspace Workspace    @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id])
   userNotis UserNoti[]
 }
@@ -178,7 +179,7 @@ model ActivityLog {
   entityType  String
   entityId    Int
   createdAt   DateTime  @default(now())
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspace   Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id])
 }
 
@@ -191,7 +192,7 @@ model Invitation {
   invitedBy   Int
   invitedTo   Int?
   createdAt   DateTime         @default(now())
-  workspace   Workspace        @relation(fields: [workspaceId], references: [id])
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   sender      User             @relation("InvitedBy", fields: [invitedBy], references: [id])
   receiver    User?            @relation("InvitedTo", fields: [invitedTo], references: [id])
 }

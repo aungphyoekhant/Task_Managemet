@@ -14,12 +14,15 @@ app.use(cors());
 //------------------------------------------------------------------------------
 import { router as userRouter } from "./routes/user";
 import { router as profileRouter } from "./routes/profile";
+import { router as workspaceRouter } from "./routes/workspace";
+import { router as workspaceInvitedRouter } from "./routes/workspaceInvited";
 
+app.use("/users", workspaceRouter);
 app.use("/users", userRouter);
-app.use("/users/profile", profileRouter);
+app.use("/users", profileRouter);
+app.use("/users", workspaceInvitedRouter);
 //------------------------------------------------------------------------------
 
-// Root Route
 app.get("/", (req, res) => {
   res.json({ msg: `SERVER IS RUNNING ON PORT ${PORT}` });
 });
