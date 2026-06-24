@@ -23,7 +23,7 @@ export const userAuth = async (req: Request, res: Response, next: NextFunction) 
       return res.status(404).json({ msg: "User not found" });
     }
 
-    // res.locals += user
+    // res.locals.user += user
     res.locals.user = user;
     next();
   } catch (err: any) {

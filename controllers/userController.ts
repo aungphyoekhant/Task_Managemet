@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { authService } from "../services/authServices";
 import { userService } from "../services/userServices";
 
 import jwt from "jsonwebtoken";
@@ -12,14 +13,14 @@ export const userController = {
         return res.status(400).json({ msg: "Email and Password are required" });
       }
 
-      const user = await userService.findUserByEmail(email);
+      const user = await authService.findByEmail(email);
       if (!user) return res.status(401).json({ msg: "Invalid email or password" });
 
-      const isPasswordValid = await userService.comparePassword(password, user.password);
+      const isPasswordValid = await authService.comparePassword(password, user.password);
       if (!isPasswordValid) return res.status(401).json({ msg: "Invalid email or password" });
 
-      const { accessToken, refreshToken } = userService.generateTokens(user);
-      await userService.updateRefreshToken(user.id, refreshToken);
+      const { accessToken, refreshToken } = authService.generateTokens(user);
+      await authService.updateRefreshToken(user.id, refreshToken);
 
       res.status(200).json({
         con: true,
@@ -38,7 +39,7 @@ export const userController = {
     if (!refreshToken) return res.status(401).json({ msg: "Refresh token required" });
 
     try {
-      const decoded = userService.verifyRefreshToken(refreshToken);
+      const decoded = authService.verifyRefreshToken(refreshToken);
       const newAccessToken = jwt.sign({ id: decoded.id }, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "1h" });
 
       res.json({ accessToken: newAccessToken });
@@ -54,16 +55,14 @@ export const userController = {
       if (!user || !user.id) {
         return res.status(401).json({ con: false, msg: "Unauthorized" });
       }
-
       await userService.logout(user.id);
 
-      res.status(200).json({
+      return res.status(200).json({
         con: true,
         msg: "Logout Successful",
       });
     } catch (error) {
-      console.error("Logout Error:", error);
-      res.status(500).json({ con: false, msg: "Internal Server Error" });
+      return res.status(500).json({ con: false, msg: "Internal Server Error" });
     }
   },
 };

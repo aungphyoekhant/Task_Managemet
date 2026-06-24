@@ -5,33 +5,30 @@ export const profileController = {
   getProfile: async (req: Request, res: Response) => {
     const user = res.locals.user;
 
-    if (!user || !user.id) {
-      return res.status(401).json({ msg: "Unauthorized: No user found" });
-    }
-
     try {
-      const profile = await profileService.getProfile(Number(user.id));
+      const profile = await profileService.getProfile(user.id);
+      console.log("Profile:", profile);
 
       res.json({
-        email: user.email,
-        name: profile?.name || "No name set",
-        avatar: profile?.avatar || "No avatar set",
+        con: true,
+        data: {
+          email: user.email,
+          role: user.role,
+          name: profile?.name || "No name set",
+          avatar: profile?.avatar || "No avatar set",
+        },
       });
-    } catch (error: any) {
-      console.error("Get Profile Error:", error);
-      res.status(500).json({
-        msg: "Error fetching profile",
-        error: error.message,
-      });
+    } catch (error) {
+      res.status(500).json({ con: false, msg: "Error fetching profile" });
     }
   },
 
-  createProfile: async (req: Request, res: Response) => {
+  upsertProfile: async (req: Request, res: Response) => {
     const { name, avatar } = req.body;
     const user = res.locals.user;
 
     if (!name || !avatar) {
-      return res.status(400).json({ msg: "Name and Avatar are required" });
+      return res.status(400).json({ con: false, msg: "Name and Avatar are required" });
     }
 
     try {
@@ -39,19 +36,11 @@ export const profileController = {
 
       res.json({
         con: true,
-        msg: "Saved Successfully Profile",
-        result: {
-          ...profile,
-          user: {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-          },
-        },
+        msg: "Profile saved successfully",
+        data: profile,
       });
     } catch (error) {
-      console.error("Profile Save Error:", error);
-      res.status(500).json({ msg: "Error saving profile" });
+      res.status(500).json({ con: false, msg: "Error saving profile" });
     }
   },
 };

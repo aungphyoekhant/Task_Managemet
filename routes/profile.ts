@@ -4,5 +4,5 @@ import { profileController } from "../controllers/profileController";
 
 export const router = express.Router();
 
-router.get("/profile", profileController.getProfile);
-router.post("/profile", userAuth, profileController.createProfile);
+router.get("/profile", userAuth, profileController.getProfile);
+router.post("/profile", userAuth, profileController.upsertProfile);

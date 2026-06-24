@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import { requestLogger } from "./middlewares/requset-logger";
 import { logger } from "./lib/logger";
+import { requestLogger } from "./middlewares/requset-logger";
 
 const app = express();
 
@@ -16,7 +16,11 @@ import { router as userRouter } from "./routes/user";
 import { router as profileRouter } from "./routes/profile";
 import { router as workspaceRouter } from "./routes/workspace";
 import { router as workspaceInvitedRouter } from "./routes/workspaceInvited";
+import { router as authUserRouter } from "./routes/userAuth";
+import { router as invitationRouter } from "./routes/invitation";
 
+app.use("/users", invitationRouter);
+app.use("/userAuth", authUserRouter);
 app.use("/users", workspaceRouter);
 app.use("/users", userRouter);
 app.use("/users", profileRouter);

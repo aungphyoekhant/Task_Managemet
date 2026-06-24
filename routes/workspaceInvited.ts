@@ -6,4 +6,3 @@ import { workspaceInvitedController } from "../controllers/workspaceInvitedContr
 export const router = express.Router();
 
 router.post("/workspace/invited", userAuth, roleMiddleware, workspaceInvitedController.inviteUser);
-router.post("/workspace/accept", userAuth, roleMiddleware, workspaceInvitedController.acceptInvitation);
