@@ -16,7 +16,7 @@ const handleInvitation = async (userId: number, invitationId: number) => {
       },
     });
 
-    // ၂။ Invitation ကို Accept လုပ်ပြီးသားဖြစ်ကြောင်း အပ်ဒိတ်လုပ်ခြင်း
+    // Invitation ACCEPTED Update
     await prisma.invitation.update({
       where: { id: invitationId },
       data: { status: "ACCEPTED", invitedTo: userId },
@@ -62,6 +62,7 @@ export const authUserServices = {
     }
 
     const accessToken = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "1h" });
+
     const refreshToken = jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET as string, { expiresIn: "7d" });
 
     await prisma.user.update({

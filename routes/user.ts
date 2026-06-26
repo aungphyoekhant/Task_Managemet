@@ -1,9 +1,9 @@
 import express from "express";
 import { userController } from "../controllers/userController";
-import { userAuth } from "../middlewares/user-auth";
+import { auth } from "../middlewares/authMiddleware";
 
 export const router = express.Router();
 
 router.post("/login", userController.userLogin);
-router.post("/refresh", userAuth, userController.refreshToken);
-router.post("/logout", userAuth, userController.logout);
+router.post("/refresh", auth, userController.refreshToken);
+router.post("/logout", auth, userController.logout);

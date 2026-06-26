@@ -1,9 +1,9 @@
 import express from "express";
 import { authUserController } from "../controllers/authUserController";
-import { userAuth } from "../middlewares/user-auth";
+import { auth } from "../middlewares/authMiddleware";
 
 export const router = express.Router();
 
 router.post("/register", authUserController.register);
 router.post("/login", authUserController.login);
-router.delete("/logout", userAuth, authUserController.logout);
+router.delete("/logout", auth, authUserController.logout);

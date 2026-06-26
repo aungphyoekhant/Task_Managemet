@@ -1,15 +1,15 @@
 import express from "express";
-import { userAuth } from "../middlewares/user-auth";
+import { auth } from "../middlewares/authMiddleware";
 import { roleMiddleware } from "../middlewares/role-Middleware";
 import { workspaceController } from "../controllers/workspaceController";
 export const router = express.Router();
 
-router.get("/workspace/:id", userAuth, roleMiddleware, workspaceController.getWorkspace);
+router.get("/workspace/:id", auth, roleMiddleware, workspaceController.getWorkspace);
 
-router.get("/workspaces", userAuth, roleMiddleware, workspaceController.getAllWorkspaces);
+router.get("/workspaces", auth, roleMiddleware, workspaceController.getAllWorkspaces);
 
-router.post("/workspace", userAuth, roleMiddleware, workspaceController.createWorkspace);
+router.post("/workspace", auth, roleMiddleware, workspaceController.createWorkspace);
 
-router.put("/workspace/:id", userAuth, roleMiddleware, workspaceController.modifyWorkspace);
+router.put("/workspace/:id", auth, roleMiddleware, workspaceController.modifyWorkspace);
 
-router.delete("/workspace/:id", userAuth, roleMiddleware, workspaceController.dropWorkspace);
+router.delete("/workspace/:id", auth, roleMiddleware, workspaceController.dropWorkspace);

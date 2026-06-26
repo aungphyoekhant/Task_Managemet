@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { InvitationStatus } from "../generated/prisma/client";
+import { Role } from "../generated/prisma/client";
 
 export const invitationService = {
   getInvitationById: async (id: number) => {
@@ -15,7 +16,11 @@ export const invitationService = {
 
   addMember: async (userId: number, workspaceId: number, role: string) => {
     return await prisma.workspaceUser.create({
-      data: { userId, workspaceId, role },
+      data: {
+        userId: userId,
+        workspaceId: workspaceId,
+        role: role as Role,
+      },
     });
   },
 };

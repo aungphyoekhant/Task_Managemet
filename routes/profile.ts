@@ -1,8 +1,8 @@
 import express from "express";
-import { userAuth } from "../middlewares/user-auth";
+import { auth } from "../middlewares/authMiddleware";
 import { profileController } from "../controllers/profileController";
 
 export const router = express.Router();
 
-router.get("/profile", userAuth, profileController.getProfile);
-router.post("/profile", userAuth, profileController.upsertProfile);
+router.get("/profile", auth, profileController.getProfile);
+router.post("/profile", auth, profileController.upsertProfile);

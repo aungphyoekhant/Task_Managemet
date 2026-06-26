@@ -8,6 +8,10 @@ export const workspaceService = {
         ownerId: userId,
       },
       include: {
+        projects: true,
+        workspaceUsers: true,
+        tasks: true,
+
         invitations: {
           where: {
             status: "ACCEPTED",
@@ -20,6 +24,14 @@ export const workspaceService = {
     return await prisma.workspace.findMany({
       where: {
         ownerId: userId,
+      },
+      include: {
+        invitations: {
+          where: {
+            status: "ACCEPTED",
+          },
+        },
+        workspaceUsers: true,
       },
     });
   },

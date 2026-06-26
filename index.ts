@@ -6,25 +6,15 @@ import { requestLogger } from "./middlewares/requset-logger";
 
 const app = express();
 
-app.use(requestLogger);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-//------------------------------------------------------------------------------
-import { router as userRouter } from "./routes/user";
-import { router as profileRouter } from "./routes/profile";
-import { router as workspaceRouter } from "./routes/workspace";
-import { router as workspaceInvitedRouter } from "./routes/workspaceInvited";
-import { router as authUserRouter } from "./routes/userAuth";
-import { router as invitationRouter } from "./routes/invitation";
+app.use(requestLogger);
 
-app.use("/users", invitationRouter);
-app.use("/userAuth", authUserRouter);
-app.use("/users", workspaceRouter);
-app.use("/users", userRouter);
-app.use("/users", profileRouter);
-app.use("/users", workspaceInvitedRouter);
+import rootRouter from "./route";
+app.use(rootRouter);
+
 //------------------------------------------------------------------------------
 
 app.get("/", (req, res) => {
