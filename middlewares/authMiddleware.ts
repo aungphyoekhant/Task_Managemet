@@ -7,6 +7,7 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
   const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
+    console.log("Token check failed for URL:", req.url);
     return res.status(401).json({ msg: "Token required" });
   }
 
@@ -15,36 +16,20 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      include: {
-        profile: true,
-        workspaceUsers: {
-          include: {
-            workspace: true,
-          },
-        },
-        projectUsers: true,
-        projects: true,
-        notifications: true,
-        activityLogs: true,
-        invitations: true,
-      },
     });
 
     if (!user) {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    // res.locals.user += user
     res.locals.user = user;
     next();
   } catch (err: any) {
-    // Token Expired => Error
     if (err.name === "TokenExpiredError") {
       return res.status(401).json({ msg: "Token expired, please refresh" });
     }
-
     console.log(err);
-    res.json(err);
+    res.json("Middleware Error");
     return res.status(403).json({ msg: "User-Auth-Middleware : Invalid token" });
   }
 };

@@ -1,44 +1,41 @@
 import { Request, Response } from "express";
 import { memberService } from "../services/memberServices";
+import { Role } from "../generated/prisma/client";
 
 export const memberController = {
   deleteMember: async (req: Request, res: Response) => {
     const { workspaceId, userId } = req.params;
     const currentUserId = Number(res.locals.user.id);
 
-    try {
-      // Find target member
-      const targetMember = await memberService.getMemberRole(Number(workspaceId), Number(userId));
-      if (!targetMember) {
-        return res.status(404).json({ message: "Member မတွေ့ရှိပါ။" });
-      }
+    const wId = Number(workspaceId);
+    const uId = Number(userId);
 
-      //Find current user
-      const currentUser = await memberService.getMemberRole(Number(workspaceId), Number(currentUserId));
-      const workspace = await memberService.getWorkspaceOwner(Number(workspaceId));
+    try {
+      // ၁။ Target Member ရဲ့ Role ကို ရှာခြင်း
+      const target = await memberService.getMemberRole(wId, uId);
+      if (!target) return res.status(404).json({ msg: "Not Found Member" });
+
+      // ၂။ Current User ရဲ့ Role နဲ့ Owner ဟုတ်မဟုတ် စစ်ဆေးခြင်း
+      const currentUser = await memberService.getMemberRole(wId, currentUserId);
+      const workspace = await memberService.getWorkspaceOwner(wId);
 
       const isOwner = workspace?.ownerId === currentUserId;
-      const isAdmin = currentUser?.role === "ADMIN";
+      const currentRole = currentUser?.role as Role;
 
-      // Check permission
-      let canDelete = false;
+      // Permission Check
+      const hasPermission = memberService.canDelete(currentRole, isOwner, target.role);
 
-      if (isOwner) {
-        canDelete = true;
-      } else if (isAdmin && targetMember.role !== "ADMIN" && targetMember.role !== "OWNER") {
-        canDelete = true;
+      if (!hasPermission) {
+        return res.status(403).json({ msg: "You don't have permission to delete this member" });
       }
 
-      if (!canDelete) {
-        return res.status(403).json({ message: "You don't have permission to delete this member" });
-      }
+      // Delete Member
+      await memberService.deleteMember(wId, uId);
 
-      // ၄။ ဖျက်ခြင်း
-      await memberService.deleteMember(Number(workspaceId), Number(userId));
-
-      return res.status(200).json({ message: "Member deleted successfully" });
+      return res.status(200).json({ msg: "Deleted Member Successfully" });
     } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error", error });
+      console.error(error);
+      return res.status(500).json({ msg: "Internal Server Error" });
     }
   },
 };

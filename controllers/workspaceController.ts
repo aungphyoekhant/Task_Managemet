@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { workspaceService } from "../services/workspaceServices";
-import { logger } from "../lib/logger";
 
 export const workspaceController = {
   getAllWorkspaces: async (req: Request, res: Response) => {
@@ -49,8 +48,6 @@ export const workspaceController = {
   createWorkspace: async (req: Request, res: Response) => {
     const { name, logo } = req.body;
     const user = res.locals.user;
-
-    logger.info(req.body);
 
     if (!name) {
       return res.status(400).json({ msg: "Workspace name is required" });

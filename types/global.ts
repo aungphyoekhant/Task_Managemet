@@ -1,0 +1,107 @@
+import { Role, ProjectStatus, TaskStatus, Priority, InvitationStatus } from "../generated/prisma/client";
+// 1. Auth Payloads
+export type RegisterPayload = {
+  email: string;
+  password: string;
+  name: string;
+};
+
+export type ComparePassword = {
+  password: string;
+  hash: string;
+};
+
+export type UpdateTokenPayload = {
+  userId: number;
+  token: string | null;
+};
+
+export type RefreshTokenPayload = {
+  id: number;
+  token: string;
+};
+
+export type AccessPayload = {
+  id: number;
+  email: string;
+  role: Role;
+};
+
+export type InvitationTokenPayload = {
+  invitationId: number;
+  email: string;
+};
+
+export type RefreshPayload = {
+  id: number;
+};
+
+export type UserResponse = {
+  id: number;
+  email: string;
+  name: string | null;
+  role: Role;
+};
+
+// 2. Workspace & Member Management
+export type AddMemberPayload = {
+  userId: number;
+  workspaceId: number;
+  role: Role;
+};
+
+// 3. Project Management
+export type CreateProjectPayload = {
+  workspaceId: number;
+  createBy: number;
+  name: string;
+  description?: string;
+  status?: ProjectStatus;
+  startDate?: Date;
+  endDate?: Date;
+};
+
+// 4. Task Management
+export type CreateTaskPayload = {
+  workspaceId: number;
+  projectId: number;
+  projectUserId: number;
+  assignedTo: number;
+  title: string;
+  description?: string;
+  priority?: Priority;
+  status?: TaskStatus;
+  dueDate?: Date;
+};
+
+// 5. Invitation
+export type CreateInvitationPayload = {
+  workspaceId: number;
+  email: string;
+  role: Role;
+  invitedBy: number;
+};
+
+// 6. Comment & Notification
+export type CreateCommentPayload = {
+  workspaceId: number;
+  taskId: number;
+  authorId: number;
+  content: string;
+};
+
+// 7. Refresh Token Payload (သင်သုံးထားတဲ့ Global type)
+
+export type UpdateInvitationPayload = {
+  id: number;
+  status: InvitationStatus;
+};
+
+export type UpsertProfileData = {
+  name: string;
+  avatar: string;
+  jobTitle?: string;
+  bio?: string;
+  phone?: string;
+  workspaceId?: number;
+};

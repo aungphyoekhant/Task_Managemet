@@ -2,23 +2,22 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 import { invitationService } from "../services/invitationServices";
+import { InvitationStatus } from "../generated/prisma/client";
+import { InvitationTokenPayload } from "../types/global";
 
 export const invitationController = {
   acceptInvitation: async (req: Request, res: Response) => {
     const { token } = req.query;
-
-    if (!token) {
-      return res.status(400).json({ con: false, msg: "Token is required" });
-    }
+    if (!token) return res.status(400).json({ con: false, msg: "Token is required" });
 
     try {
-      // Check if the token is valid
-      const decoded = jwt.verify(token as string, process.env.INVITATION_SECRET as string) as any;
+      const decoded = jwt.verify(token as string, process.env.INVITATION_SECRET as string) as InvitationTokenPayload;
+
       const { invitationId, email } = decoded;
 
-      // invitedBy is the user who sent the invitation
+      // ၂။ Invitation ရှိမရှိ စစ်ဆေးခြင်း
       const invitation = await invitationService.getInvitationById(invitationId);
-      if (!invitation || invitation.status !== "PENDING") {
+      if (!invitation || invitation.status !== InvitationStatus.PENDING) {
         return res.status(400).json({ con: false, msg: "Invitation invalid or already used" });
       }
 
@@ -33,25 +32,28 @@ export const invitationController = {
         });
       }
 
-      // ၄။ အကောင့်ရှိရင် Member ဖြစ်ပြီးသားလား စစ်ဆေးခြင်း
+      // ၄။ Member ဖြစ်ပြီးသားလား စစ်ဆေးခြင်း
       const existingMember = await prisma.workspaceUser.findFirst({
         where: { userId: existingUser.id, workspaceId: invitation.workspaceId },
       });
+      if (existingMember) return res.status(400).json({ con: false, msg: "Already a member" });
 
-      if (existingMember) {
-        return res.status(400).json({ con: false, msg: "You are already a member of this workspace" });
-      }
+      // ၅။ Transaction ဖြင့် Member ထည့်ခြင်းနှင့် Status ပြောင်းခြင်း
+      await invitationService.processAcceptInvitation(
+        {
+          userId: existingUser.id,
+          workspaceId: invitation.workspaceId,
+          role: invitation.role,
+        },
+        {
+          id: invitation.id,
+          status: InvitationStatus.ACCEPTED,
+        },
+      );
 
-      // ၅။ Member အဖြစ် ထည့်သွင်းခြင်း
-      await invitationService.addMember(existingUser.id, invitation.workspaceId, invitation.role);
-
-      // ၆။ Status အပ်ဒိတ်လုပ်ခြင်း
-      await invitationService.updateInvitationStatus(invitationId, "ACCEPTED");
-
-      return res.json({ con: true, msg: "Successfully joined the workspace!" });
+      return res.json({ con: true, msg: "Successfully joined!" });
     } catch (error) {
-      console.error("Accept Invitation Error:", error);
-      return res.status(401).json({ con: false, msg: "InvitatioController :Invalid or expired token" });
+      return res.status(401).json({ con: false, msg: "Invalid or expired token" });
     }
   },
 };

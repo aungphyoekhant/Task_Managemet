@@ -7,16 +7,15 @@ export const profileController = {
 
     try {
       const profile = await profileService.getProfile(user.id);
-      console.log("Profile:", profile);
+
+      if (!profile) {
+        return res.status(404).json({ con: false, msg: "Profile user not found" });
+      }
 
       res.json({
         con: true,
-        data: {
-          email: user.email,
-          role: user.role,
-          name: profile?.name || "No name set",
-          avatar: profile?.avatar || "No avatar set",
-        },
+        msg: "Profile fetched successfully",
+        data: profile,
       });
     } catch (error) {
       res.status(500).json({ con: false, msg: "Error fetching profile" });
@@ -24,23 +23,45 @@ export const profileController = {
   },
 
   upsertProfile: async (req: Request, res: Response) => {
-    const { name, avatar } = req.body;
-    const user = res.locals.user;
-
-    if (!name || !avatar) {
-      return res.status(400).json({ con: false, msg: "Name and Avatar are required" });
-    }
-
     try {
-      const profile = await profileService.upsertProfile(user.id, { name, avatar });
+      const user = res.locals.user;
 
-      res.json({
+      const avatarUrl = req.file ? `/uploads/${req.file.filename}` : req.body.avatar;
+
+      const { name, workspaceId, jobTitle, bio, phone } = req.body;
+      const parsedWorkspaceId = workspaceId ? Number(workspaceId) : undefined;
+
+      // 2. Validation
+      if (!name || !avatarUrl) {
+        return res.status(400).json({ con: false, msg: "Name and Avatar are required" });
+      }
+
+      if (workspaceId && isNaN(parsedWorkspaceId as number)) {
+        return res.status(400).json({ con: false, msg: "Valid workspaceId is required" });
+      }
+
+      const profile = await profileService.upsertProfile(user.id, {
+        name,
+        avatar: avatarUrl,
+        jobTitle,
+        bio,
+        phone,
+        workspaceId: parsedWorkspaceId,
+      });
+
+      return res.json({
         con: true,
         msg: "Profile saved successfully",
         data: profile,
       });
-    } catch (error) {
-      res.status(500).json({ con: false, msg: "Error saving profile" });
+    } catch (error: any) {
+      // 4. Error Handling
+      if (error.message === "User is not a member of this workspace" || error.message === "User has no workspace") {
+        return res.status(400).json({ con: false, msg: error.message });
+      }
+
+      console.error("Profile Error:", error);
+      return res.status(500).json({ con: false, msg: "Error saving profile" });
     }
   },
 };

@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { Role } from "../generated/prisma/client";
 
 export const workspaceService = {
   getWorkspace: async (userId: number, workspaceId: number) => {
@@ -32,31 +33,41 @@ export const workspaceService = {
           },
         },
         workspaceUsers: true,
+        projects: true,
       },
     });
   },
 
   createWorkspace: async (userId: number, name: string, logo?: string) => {
-    return await prisma.$transaction(async (tx) => {
-      const workspace = await tx.workspace.create({
-        data: {
-          name,
-          logo,
-          ownerId: userId,
-        },
-      });
+    try {
+      return await prisma.$transaction(async (tx) => {
+        console.log("Starting Workspace Creation...");
 
-      await tx.workspaceUser.create({
-        data: {
-          workspaceId: workspace.id,
-          userId: userId,
-        },
-      });
+        const workspace = await tx.workspace.create({
+          data: {
+            name,
+            logo,
+            ownerId: userId,
+          },
+        });
+        console.log("Workspace Created ID:", workspace.id);
 
-      return workspace;
-    });
+        const userRole = await tx.workspaceUser.create({
+          data: {
+            workspaceId: workspace.id,
+            userId: userId,
+            role: Role.OWNER,
+          },
+        });
+
+        console.log("Created User Role Object:", userRole);
+        return workspace;
+      });
+    } catch (error) {
+      console.error("CRITICAL ERROR in createWorkspace:", error);
+      throw error;
+    }
   },
-
   modifyWorkspace: async (userId: number, workspaceId: number, data: { name: string; logo: string }) => {
     return await prisma.$transaction(async (tx) => {
       // Update workspace

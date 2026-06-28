@@ -46,7 +46,6 @@ enum InvitationStatus {
 model User {
   id           Int           @id @default(autoincrement())
   email        String        @unique
-  name         String?
   password     String
   refreshToken String?
   role         Role          @default(MEMBER)
@@ -67,8 +66,11 @@ model User {
 
 model Profile {
   id        Int      @id @default(autoincrement())
-  name      String?
+  name      String
+  phone     String?
   avatar    String?
+  jobTitle  String?
+  bio       String?
   userId    Int      @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspaceId Int?
@@ -90,6 +92,21 @@ model Workspace {
   invitations    Invitation[]
   notifications  Notification[]
   activityLogs   ActivityLog[]
+  
+}
+
+model Invitation {
+  id          Int              @id @default(autoincrement())
+  workspaceId Int
+  email       String
+  role        Role             @default(MEMBER)
+  status      InvitationStatus @default(PENDING)
+  invitedBy   Int
+  invitedTo   Int?
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
+  sender      User             @relation("InvitedBy", fields: [invitedBy], references: [id])
+  receiver    User?            @relation("InvitedTo", fields: [invitedTo], references: [id])
 }
 
 model WorkspaceUser {
@@ -99,6 +116,7 @@ model WorkspaceUser {
   role         Role          @default(MEMBER)
   workspace   Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id])
+  @@unique([userId, workspaceId])
 }
 
 model Project {
@@ -122,14 +140,19 @@ model ProjectUser {
   id        Int     @id @default(autoincrement())
   projectId Int
   userId    Int
-  project   Project @relation(fields: [projectId], references: [id])
-  user      User    @relation(fields: [userId], references: [id])
+  role      Role    @default(MEMBER)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+  
 }
+
 
 model Task {
   id          Int        @id @default(autoincrement())
   workspaceId Int
   projectId   Int
+  projectUserId Int
   assignedTo  Int
   title       String
   description String?
@@ -137,9 +160,9 @@ model Task {
   status      TaskStatus @default(PENDING)
   dueDate     DateTime?
   createdAt   DateTime   @default(now())
-
+  projectUser   ProjectUser @relation(fields: [projectUserId], references: [id], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
-  project   Project   @relation(fields: [projectId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   comments  Comment[]
 }
 
@@ -184,18 +207,4 @@ model ActivityLog {
   createdAt   DateTime  @default(now())
   workspace   Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id])
-}
-
-model Invitation {
-  id          Int              @id @default(autoincrement())
-  workspaceId Int
-  email       String
-  role        Role             @default(MEMBER)
-  status      InvitationStatus @default(PENDING)
-  invitedBy   Int
-  invitedTo   Int?
-  createdAt   DateTime         @default(now())
-  workspace   Workspace        @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
-  sender      User             @relation("InvitedBy", fields: [invitedBy], references: [id])
-  receiver    User?            @relation("InvitedTo", fields: [invitedTo], references: [id])
 }

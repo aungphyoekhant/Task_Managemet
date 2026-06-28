@@ -1,26 +1,41 @@
 import { prisma } from "../lib/prisma";
-import { InvitationStatus } from "../generated/prisma/client";
-import { Role } from "../generated/prisma/client";
+import { UpdateInvitationPayload, AddMemberPayload } from "../types/global";
 
 export const invitationService = {
   getInvitationById: async (id: number) => {
     return await prisma.invitation.findUnique({ where: { id } });
   },
 
-  updateInvitationStatus: async (id: number, status: string) => {
+  updateInvitationStatus: async (payload: UpdateInvitationPayload) => {
     return await prisma.invitation.update({
-      where: { id },
-      data: { status: status as InvitationStatus },
+      where: { id: payload.id },
+      data: { status: payload.status },
     });
   },
 
-  addMember: async (userId: number, workspaceId: number, role: string) => {
+  addMember: async (data: AddMemberPayload) => {
     return await prisma.workspaceUser.create({
       data: {
-        userId: userId,
-        workspaceId: workspaceId,
-        role: role as Role,
+        userId: data.userId,
+        workspaceId: data.workspaceId,
+        role: data.role,
       },
     });
+  },
+
+  processAcceptInvitation: async (memberData: AddMemberPayload, invitationUpdate: UpdateInvitationPayload) => {
+    return await prisma.$transaction([
+      prisma.workspaceUser.create({
+        data: {
+          userId: memberData.userId,
+          workspaceId: memberData.workspaceId,
+          role: memberData.role,
+        },
+      }),
+      prisma.invitation.update({
+        where: { id: invitationUpdate.id },
+        data: { status: invitationUpdate.status },
+      }),
+    ]);
   },
 };

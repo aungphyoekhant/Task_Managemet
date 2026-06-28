@@ -29,8 +29,8 @@ export const projectService = {
     return await prisma.project.findUnique({
       where: { id: projectId },
       include: {
-        projectUsers: true,
         tasks: true,
+        projectUsers: true,
       },
     });
   },
@@ -41,8 +41,8 @@ export const projectService = {
         workspaceId: workspaceId,
       },
       include: {
-        projectUsers: true,
         tasks: true,
+        projectUsers: true,
       },
     });
   },
@@ -53,8 +53,8 @@ export const projectService = {
       data: {
         name: data.name,
         description: data.description,
-        startDate: data.startDate,
-        endDate: data.endDate,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
       },
     });
   },
