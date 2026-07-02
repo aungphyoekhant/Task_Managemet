@@ -1,18 +1,25 @@
-// routes/index.ts
 import expresss from "express";
 const router = expresss.Router();
 
-import { router as profileRouter } from "./routes/profile";
-import { router as workspaceRouter } from "./routes/workspace";
-import { router as workspaceInvitedRouter } from "./routes/workspaceInvited";
-import { router as userRouter } from "./routes/user";
-import { router as invitationRouter } from "./routes/invitation";
-import { router as projectRouter } from "./routes/project";
-import { router as updateRoleRouter } from "./routes/updateRole";
-import { router as memberRouter } from "./routes/member";
-import { router as taskRouter } from "./routes/task";
-import { router as projectUserRouter } from "./routes/projectUser";
+import { router as profileRouter } from "./routes/profile.route";
+import { router as workspaceRouter } from "./routes/workspace.route";
+import { router as workspaceInvitedRouter } from "./routes/workspace_invited.route";
+import { router as userRouter } from "./routes/user.route";
+import { router as invitationRouter } from "./routes/invitation.route";
+import { router as projectRouter } from "./routes/project.route";
+import { router as memberRouter } from "./routes/member.route";
+import { router as taskRouter } from "./routes/task.route";
+import { router as projectUserRouter } from "./routes/project_user.route";
+import { router as dashboardRouter } from "./routes/dashboard.route";
+import { router as searchRouter } from "./routes/search.route";
+import { router as updateRoleRouter } from "./routes/update_role.route";
+import { router as commentRouter } from "./routes/comment.route";
+import { router as activityRouter } from "./routes/activity.route";
+import { router as workspaceUserRouter } from "./routes/workspace-user.route";
 
+router.use(workspaceUserRouter);
+router.use(searchRouter);
+router.use(dashboardRouter);
 router.use(userRouter);
 router.use(workspaceRouter);
 router.use(profileRouter);
@@ -23,5 +30,7 @@ router.use("/workspaces", projectUserRouter);
 router.use(updateRoleRouter);
 router.use(memberRouter);
 router.use(taskRouter);
+router.use(commentRouter);
+router.use(activityRouter);
 
 export default router;

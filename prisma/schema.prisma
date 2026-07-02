@@ -24,9 +24,9 @@ enum ProjectStatus {
 }
 
 enum TaskStatus {
-  PENDING
   IN_PROGRESS
-  COMPLETED
+  TODO
+  DONE
 }
 
 enum Priority {
@@ -53,7 +53,7 @@ model User {
   status       String        @default("ACTIVE")
   createdAt    DateTime      @default(now())
   profile        Profile?
-
+  
   workspaceUsers WorkspaceUser[]
   projects       Project[]     @relation("CreatedProjects")
   projectUsers   ProjectUser[]
@@ -92,7 +92,7 @@ model Workspace {
   invitations    Invitation[]
   notifications  Notification[]
   activityLogs   ActivityLog[]
-  
+  projectUsers   ProjectUser[]
 }
 
 model Invitation {
@@ -141,10 +141,10 @@ model ProjectUser {
   projectId Int
   userId    Int
   role      Role    @default(MEMBER)
+  workspaceId Int
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks   Task[]
-  
 }
 
 
@@ -152,15 +152,13 @@ model Task {
   id          Int        @id @default(autoincrement())
   workspaceId Int
   projectId   Int
-  projectUserId Int
   assignedTo  Int
   title       String
   description String?
   priority    Priority   @default(MEDIUM)
-  status      TaskStatus @default(PENDING)
+  status      TaskStatus @default(IN_PROGRESS)
   dueDate     DateTime?
   createdAt   DateTime   @default(now())
-  projectUser   ProjectUser @relation(fields: [projectUserId], references: [id], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   comments  Comment[]
@@ -183,7 +181,6 @@ model Notification {
   message     String
   isRead      Boolean   @default(false)
   createdAt   DateTime  @default(now())
-
   workspace Workspace    @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id])
   userNotis UserNoti[]

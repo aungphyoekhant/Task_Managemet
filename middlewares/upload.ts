@@ -4,7 +4,7 @@ import path from "path";
 // File သိမ်းမယ့်နေရာ သတ်မှတ်ပေးခြင်း
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // ပရောဂျက်အောက်မှာ uploads folder ရှိရမယ်
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
     // File နာမည်ကို Unique ဖြစ်အောင် Timestamp နဲ့ ရောပေးမယ်

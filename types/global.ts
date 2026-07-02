@@ -65,7 +65,6 @@ export type CreateProjectPayload = {
 export type CreateTaskPayload = {
   workspaceId: number;
   projectId: number;
-  projectUserId: number;
   assignedTo: number;
   title: string;
   description?: string;
@@ -89,8 +88,6 @@ export type CreateCommentPayload = {
   authorId: number;
   content: string;
 };
-
-// 7. Refresh Token Payload (သင်သုံးထားတဲ့ Global type)
 
 export type UpdateInvitationPayload = {
   id: number;
