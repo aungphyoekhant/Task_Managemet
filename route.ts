@@ -16,7 +16,9 @@ import { router as updateRoleRouter } from "./routes/update_role.route";
 import { router as commentRouter } from "./routes/comment.route";
 import { router as activityRouter } from "./routes/activity.route";
 import { router as workspaceUserRouter } from "./routes/workspace-user.route";
+import { router as notificationRouter } from "./routes/notification.route";
 
+router.use(notificationRouter);
 router.use(workspaceUserRouter);
 router.use(searchRouter);
 router.use(dashboardRouter);
@@ -26,6 +28,7 @@ router.use(profileRouter);
 router.use(workspaceInvitedRouter);
 router.use(invitationRouter);
 router.use("/workspaces", projectRouter);
+
 router.use("/workspaces", projectUserRouter);
 router.use(updateRoleRouter);
 router.use(memberRouter);

@@ -1,26 +1,38 @@
 import { Request, Response } from "express";
 import { projectUserService } from "../services/project_user.service";
 import { prisma } from "../lib/prisma";
+import { authService } from "../services/auth.service";
 
 export const projectUserController = {
   addMember: async (req: Request, res: Response) => {
     try {
-      const { projectId, userId, workspaceId } = req.body;
+      const userId = Number(res.locals.user.id);
+      if (!userId) {
+        return res.status(401).json({ con: false, msg: "Unauthorized: No user ID found" });
+      }
 
-      if (!projectId || !userId || !workspaceId) {
+      const { projectId, assignedTo, workspaceId } = req.body;
+
+      if (!projectId || !assignedTo || !workspaceId) {
         return res.status(400).json({ con: false, msg: "Missing required fields" });
       }
 
-      const { role } = res.locals.user;
+      const pId = Number(projectId);
+      const targetUserId = Number(assignedTo);
+      const wId = Number(workspaceId);
 
-      if (role !== "OWNER" && role !== "ADMIN") {
+      const data = await authService.getWorkspaceUserRole({ userId, workspaceId: wId });
+
+      if (data?.role !== "OWNER" && data?.role !== "ADMIN") {
         return res.status(403).json({ con: false, msg: "Access denied: Only Owners and Admins can add members" });
       }
 
-      const newMember = await projectUserService.addMember(Number(projectId), Number(userId), Number(workspaceId));
+      const newMember = await projectUserService.addMember(pId, targetUserId, wId, userId);
+
       return res.status(201).json({ con: true, msg: "Member added successfully", data: newMember });
     } catch (error: any) {
-      return res.status(400).json({ con: false, msg: error.message });
+      console.error("Add Member Error:", error);
+      return res.status(400).json({ con: false, msg: error.message || "Failed to add member" });
     }
   },
 

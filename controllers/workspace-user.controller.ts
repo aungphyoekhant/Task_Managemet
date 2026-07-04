@@ -1,12 +1,23 @@
 import { Request, Response } from "express";
 import { workspaceUserService } from "../services/workspace-user.service";
+import { authService } from "../services/auth.service";
 
 export const workspaceUserController = {
   getWorkspaceUsers: async (req: Request, res: Response) => {
     try {
       const user = res.locals.user;
 
-      if (user.role !== "OWNER" && user.role !== "ADMIN") {
+      if (!user) {
+        return res.status(401).json({ con: false, msg: "Unauthorized: No user ID found" });
+      }
+
+      const data = await authService.getWorkspaceUserRole({ userId: user.id, workspaceId: Number(req.params.workspaceId) });
+
+      if (!data) {
+        return res.status(404).json({ con: false, msg: "Workspace not found" });
+      }
+
+      if (data.role !== "OWNER" && data.role !== "ADMIN") {
         return res.status(403).json({ con: false, msg: "Access denied: You don't have permission" });
       }
 

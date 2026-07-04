@@ -11,5 +11,5 @@ export const registerValidator = Joi.object({
   password: Joi.string().min(6).max(12).required(),
   confirmPassword: Joi.ref("password"),
   name: Joi.string().min(4).max(30).required(),
-  invitationId: Joi.number().integer().optional(),
+  token: Joi.string().optional().allow(null, ""),
 });

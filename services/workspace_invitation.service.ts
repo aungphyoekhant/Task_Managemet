@@ -12,24 +12,21 @@ export const invitationService = {
 
     if (!workspace) throw new Error("Workspace not found");
 
-    const receiver = await prisma.user.findUnique({ where: { email: email } });
-
     const invitation = await prisma.invitation.create({
       data: {
         workspaceId,
         email,
         role: role.toUpperCase() as Role,
         invitedBy: userId,
-        invitedTo: receiver ? receiver.id : null,
+        invitedTo: null,
       },
     });
 
-    // ၄။ Token Generate လုပ်ခြင်း
     const secret = process.env.INVITATION_SECRET;
     if (!secret) throw new Error("INVITATION_SECRET is not configured");
 
     const token = jwt.sign({ invitationId: invitation.id, email: email }, secret, { expiresIn: "48h" });
-    const inviteLink = `http://localhost:5173/users/accept?token=${token}`;
+    const inviteLink = `http://localhost:5173/Register?token=${token}`;
 
     const ownerName = workspace.profile?.[0]?.name || "Workspace Owner";
 

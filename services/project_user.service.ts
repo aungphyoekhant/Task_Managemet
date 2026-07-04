@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma"; // အကယ်၍ သို့မဟုတ်ပါတယ်
 
 export const projectUserService = {
-  addMember: async (projectId: number, userId: number, workspaceId: number) => {
+  addMember: async (projectId: number, userId: number, addedById: number, workspaceId: number) => {
     const userInWorkspace = await prisma.workspaceUser.findFirst({
       where: { userId, workspaceId },
     });
@@ -25,8 +25,10 @@ export const projectUserService = {
     return await prisma.projectUser.create({
       data: {
         projectId,
-        userId,
+        userId: userId,
+        addedById: addedById,
         workspaceId,
+        role: "MEMBER",
       },
     });
   },

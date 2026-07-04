@@ -24,14 +24,12 @@ export const workspaceService = {
   },
 
   getAllWorkspace: async (userId: number) => {
-    // return keyword ကို ထည့်ပေးပါ
     return await prisma.workspace.findMany({
       where: {
         OR: [
-          { ownerId: userId }, // သူကိုယ်တိုင်ပိုင်တဲ့ Workspace
+          { ownerId: userId },
           {
             workspaceUsers: {
-              // ဒါမှမဟုတ် သူ Member အနေနဲ့ join ထားတဲ့ Workspace
               some: { userId: userId },
             },
           },
@@ -44,11 +42,23 @@ export const workspaceService = {
         invitations: {
           where: { status: "ACCEPTED" },
         },
-        // workspaceUsers ကိုပါ include လုပ်ထားရင် data ပိုစုံပါမယ်
         workspaceUsers: true,
+        activityLogs: true,
       },
     });
   },
+
+  getAllWorkspaceByUserId: async (userId: number) => {
+    return await prisma.workspaceUser.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        workspace: true,
+      },
+    });
+  },
+
   createWorkspace: async (userId: number, name: string, logo?: string) => {
     try {
       return await prisma.$transaction(async (tx) => {

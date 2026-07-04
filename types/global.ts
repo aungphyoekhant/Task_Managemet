@@ -102,3 +102,14 @@ export type UpsertProfileData = {
   phone?: string;
   workspaceId?: number;
 };
+
+export type WorkspaceUserRole = {
+  workspaceId: number;
+  role: Role;
+  userId: number;
+};
+
+export type WorkspaceUserParams = {
+  userId: number;
+  workspaceId: number;
+};

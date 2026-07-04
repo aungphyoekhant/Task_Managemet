@@ -5,6 +5,6 @@ import { auth } from "../middlewares/authMiddleware";
 export const router = express.Router();
 
 router.post("/:taskId/comments", auth, commentController.addComment);
-router.get("/:taskId/comments", commentController.getComments);
-router.put("/:commentId", auth, commentController.updateComment);
-router.delete("/:commentId", auth, commentController.deleteComment);
+router.get("/:taskId/comments", auth, commentController.getComments);
+router.put("/comments/:commentId", auth, commentController.updateComment);
+router.delete("/comments/:commentId", auth, commentController.deleteComment);

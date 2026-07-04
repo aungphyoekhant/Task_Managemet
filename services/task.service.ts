@@ -1,17 +1,38 @@
 import { prisma } from "../lib/prisma";
 import { CreateTaskPayload } from "../types/global";
-import { ActivityLog } from "../services/audit.service";
+import { auditService } from "./audit.service";
 
 export const taskService = {
   canManageProjectTasks: async (projectId: number, userId: number) => {
     const project = await prisma.project.findUnique({
       where: { id: projectId },
-      select: { createBy: true, projectUsers: { where: { userId }, select: { role: true }, take: 1 } },
+      select: {
+        createBy: true,
+        workspaceId: true,
+        projectUsers: {
+          where: { userId },
+          select: { role: true },
+          take: 1,
+        },
+      },
     });
+
     if (!project) return false;
-    if (project.createBy === userId) return true;
+
+    if (Number(project.createBy) === Number(userId)) return true;
+
     const role = project.projectUsers[0]?.role;
-    return role === "OWNER" || role === "ADMIN";
+    if (role && (role.toString().toUpperCase() === "OWNER" || role.toString().toUpperCase() === "ADMIN")) return true;
+
+    const workspaceUser = await prisma.workspaceUser.findFirst({
+      where: {
+        workspaceId: project.workspaceId,
+        userId: userId,
+        role: "OWNER",
+      },
+    });
+
+    return !!workspaceUser;
   },
 
   createTask: async (data: CreateTaskPayload) => {
@@ -53,7 +74,7 @@ export const taskService = {
       });
 
       // Activity Log ဖန်တီးခြင်း
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: data.workspaceId,
         userId: data.assignedTo,
         action: "CREATE_TASK",
@@ -66,12 +87,35 @@ export const taskService = {
   },
 
   getTaskById: async (taskId: number) => {
-    return await prisma.task.findUnique({
-      where: { id: taskId },
+    return await prisma.task.findFirst({
+      where: {
+        id: taskId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+
       include: {
         comments: true,
       },
     });
+  },
+
+  getTasks: async (workspaceId: number, cursor?: number, limit: number = 10) => {
+    const tasks = await prisma.task.findMany({
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      include: { comments: true },
+    });
+
+    const hasNextPage = tasks.length > limit;
+    const nextCursor = hasNextPage ? tasks[limit - 1].id : undefined;
+    const data = hasNextPage ? tasks.slice(0, limit) : tasks;
+
+    return { data, nextCursor, hasNextPage };
   },
 
   updateTask: async (taskId: number, data: any, userId: number) => {
@@ -96,7 +140,7 @@ export const taskService = {
         },
       });
 
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: updatedTask.workspaceId,
         userId: userId,
         action: "UPDATE_TASK",
@@ -134,7 +178,7 @@ export const taskService = {
         },
       });
 
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: task.workspaceId,
         userId: userId,
         action: "DELETE_TASK",
@@ -166,7 +210,7 @@ export const taskService = {
         },
       });
 
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: updatedTask.workspaceId,
         userId: updatedTask.assignedTo,
         action: "DELETE_TASK",

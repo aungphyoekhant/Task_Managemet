@@ -4,4 +4,4 @@ import { getDashboardStats } from "../controllers/dashboard.controller";
 
 export const router = express.Router();
 
-router.get("/dashboard", auth, getDashboardStats);
+router.get("/dashboard/workspace/:workspaceId", auth, getDashboardStats);

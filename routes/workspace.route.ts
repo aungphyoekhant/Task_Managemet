@@ -1,16 +1,18 @@
 import express from "express";
 import { auth } from "../middlewares/authMiddleware";
-import { roleMiddleware } from "../middlewares/role-Middleware";
 import { workspaceController } from "../controllers/workspace.controller";
 import { upload } from "../middlewares/upload";
 export const router = express.Router();
+import { checkWorkspaceRole } from "../middlewares/roleMiddleware";
 
-router.get("/workspace/:id", auth, workspaceController.getWorkspace);
+router.get("/allworkspacebyuserid", auth, workspaceController.getAllWrokspaceByUserId);
 
-router.get("/workspaces", auth, workspaceController.getAllWorkspace);
+router.get("/workspace/:id", auth, checkWorkspaceRole(["OWNER"]), workspaceController.getWorkspace);
 
-router.post("/workspace", auth, upload.single("logo"), roleMiddleware, workspaceController.createWorkspace);
+router.get("/workspaces", auth, checkWorkspaceRole(["OWNER"]), workspaceController.getAllWorkspace);
 
-router.put("/workspace/:id", auth, upload.single("logo"), roleMiddleware, workspaceController.modifyWorkspace);
+router.post("/workspace", auth, checkWorkspaceRole(["OWNER"]), upload.single("logo"), workspaceController.createWorkspace);
 
-router.delete("/workspace/:id", auth, workspaceController.dropWorkspace);
+router.put("/workspace/:id", auth, checkWorkspaceRole(["OWNER"]), upload.single("logo"), workspaceController.modifyWorkspace);
+
+router.delete("/workspace/:id", auth, checkWorkspaceRole(["OWNER"]), workspaceController.dropWorkspace);

@@ -5,61 +5,66 @@ import jwt from "jsonwebtoken";
 import { loginValidator, registerValidator } from "../validators/userauth";
 
 export const userController = {
+  // REGISTER
   register: async (req: Request, res: Response) => {
     try {
       const result = registerValidator.validate(req.body);
-      if (result.error) {
-        return res.json(`Validation Error: ${result.error.details[0].message}`);
-      }
+      console.log(result);
+      if (result.error) return res.status(400).json({ con: false, msg: result.error.details[0].message });
 
-      const { email, password, name, invitationId } = req.body;
+      const { email, password, name, token } = req.body;
 
-      const newUser = await userServices.register({ email, password, name }, invitationId ? Number(invitationId) : undefined);
+      const newUser = await userServices.register({ email, password, name }, token);
 
-      return res.status(201).json({ con: true, msg: "Account Created", data: newUser });
+      return res.status(201).json({ con: true, msg: "Account Created successfully", data: newUser });
     } catch (error: any) {
-      return res.status(500).json({ con: false, msg: error });
+      return res.status(500).json({ con: false, msg: error.message || "Registration failed" });
     }
   },
 
   login: async (req: Request, res: Response) => {
     try {
       const result = loginValidator.validate(req.body);
-      if (result.error) {
-        return res.json(`Validation Error: ${result.error.details[0].message}`);
-      }
+      console.log(result);
+      if (result.error) return res.status(400).json({ con: false, msg: result.error.details[0].message });
 
-      const { email, password, invitationId } = result.value;
+      const { email, password, token } = result.value;
 
-      const data = await userServices.login(email, password, invitationId ? Number(invitationId) : undefined);
+      const { user, accessToken, refreshToken } = await userServices.login(email, password, token);
 
-      if (!data) {
-        return res.status(401).json({ con: false, msg: "Invalid email or password" });
-      }
-
-      return res.status(200).json({ con: true, msg: "Login Successful", data });
+      return res.status(200).json({
+        con: true,
+        msg: "Login Successful",
+        data: {
+          user,
+          accessToken,
+          refreshToken,
+        },
+      });
     } catch (error: any) {
       return res.status(401).json({ con: false, msg: error.message });
     }
   },
 
+  // LOGOUT
   logout: async (req: Request, res: Response) => {
+    console.log("Logout");
+
     try {
-      const user = res.locals.user;
+      const userId = Number(res.locals.user.id);
 
-      if (!user) return res.status(401).json({ con: false, msg: "Unauthorized" });
+      await userServices.logout(userId);
 
-      await userServices.logout(user.id);
-
-      return res.status(200).json({ con: true, msg: "Logout successful" });
+      return res.status(200).json({ con: true, msg: "Logged out successfully" });
     } catch (error: any) {
-      return res.status(500).json({ con: false, msg: error.message });
+      return res.status(500).json({ con: false, msg: "Logout failed" });
     }
   },
 
   refreshToken: async (req: Request, res: Response) => {
     try {
       const { refreshToken } = req.body;
+      console.log(refreshToken);
       if (!refreshToken) return res.status(401).json({ con: false, msg: "Refresh token required" });
 
       const payload = authService.verifyRefreshToken(refreshToken);

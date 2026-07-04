@@ -35,9 +35,26 @@ export const searchService = {
           OR: [{ profile: { name: { contains: q, mode: "insensitive" } } }, { email: { contains: q, mode: "insensitive" } }],
         },
       },
-      include: {
+      select: {
+        id: true,
+        workspaceId: true,
+        userId: true,
+        role: true,
         user: {
-          include: { profile: true },
+          select: {
+            id: true,
+            email: true,
+            status: true,
+            createdAt: true,
+            profile: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+                jobTitle: true,
+              },
+            },
+          },
         },
       },
     });

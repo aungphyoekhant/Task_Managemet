@@ -1,41 +1,29 @@
 import { prisma } from "../lib/prisma";
-import { UpdateInvitationPayload, AddMemberPayload } from "../types/global";
+import { Role } from "../generated/prisma/client";
 
 export const invitationService = {
+  processAcceptInvitation: async (userData: { userId: number; workspaceId: number; role: string }, invitationData: { id: number; status: any }) => {
+    return await prisma.$transaction(async (tx) => {
+      await tx.workspaceUser.create({
+        data: {
+          userId: userData.userId,
+          workspaceId: userData.workspaceId,
+          role: userData.role as Role,
+        },
+      });
+
+      await tx.invitation.update({
+        where: { id: invitationData.id },
+        data: { status: invitationData.status },
+      });
+    });
+  },
+
   getInvitationById: async (id: number) => {
     return await prisma.invitation.findUnique({ where: { id } });
   },
 
-  updateInvitationStatus: async (payload: UpdateInvitationPayload) => {
-    return await prisma.invitation.update({
-      where: { id: payload.id },
-      data: { status: payload.status },
-    });
-  },
-
-  addMember: async (data: AddMemberPayload) => {
-    return await prisma.workspaceUser.create({
-      data: {
-        userId: data.userId,
-        workspaceId: data.workspaceId,
-        role: data.role,
-      },
-    });
-  },
-
-  processAcceptInvitation: async (memberData: AddMemberPayload, invitationUpdate: UpdateInvitationPayload) => {
-    return await prisma.$transaction([
-      prisma.workspaceUser.create({
-        data: {
-          userId: memberData.userId,
-          workspaceId: memberData.workspaceId,
-          role: memberData.role,
-        },
-      }),
-      prisma.invitation.update({
-        where: { id: invitationUpdate.id },
-        data: { status: invitationUpdate.status },
-      }),
-    ]);
+  findUserByEmail: async (email: string) => {
+    return await prisma.user.findUnique({ where: { email } });
   },
 };

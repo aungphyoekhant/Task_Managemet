@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { ActivityLog } from "../services/audit.service";
+import { auditService } from "./audit.service";
 
 export const projectService = {
   createProject: async (projectData: {
@@ -47,7 +47,7 @@ export const projectService = {
         },
       });
 
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: newProject.workspaceId,
         userId: newProject.createBy,
         action: "CREATE_PROJECT",
@@ -108,7 +108,7 @@ export const projectService = {
         },
       });
 
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: updatedProject.workspaceId,
         userId: updatedProject.createBy,
         action: "UPDATE_PROJECT",
@@ -141,7 +141,7 @@ export const projectService = {
         },
       });
 
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: project.workspaceId,
         userId: project.createBy,
         action: "DELETE_PROJECT",

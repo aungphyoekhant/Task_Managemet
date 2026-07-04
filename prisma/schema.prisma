@@ -48,7 +48,6 @@ model User {
   email        String        @unique
   password     String
   refreshToken String?
-  role         Role          @default(MEMBER)
   isVerified   Boolean  @default(false)
   status       String        @default("ACTIVE")
   createdAt    DateTime      @default(now())
@@ -82,7 +81,7 @@ model Workspace {
   id            Int          @id @default(autoincrement())
   name          String
   logo          String?
-  ownerId       Int
+  ownerId       Int?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   profile       Profile[]
@@ -139,12 +138,16 @@ model Project {
 model ProjectUser {
   id        Int     @id @default(autoincrement())
   projectId Int
-  userId    Int
+  addedById Int
+  userId    Int 
   role      Role    @default(MEMBER)
   workspaceId Int
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
 }
 
 
@@ -190,6 +193,7 @@ model UserNoti {
   id             Int          @id @default(autoincrement())
   userId         Int
   notificationId Int
+  isRead          Boolean      @default(false)
   user           User         @relation(fields: [userId], references: [id])
   notification   Notification @relation(fields: [notificationId], references: [id])
 }

@@ -4,9 +4,11 @@ import { commentService } from "../services/comment.service";
 export const commentController = {
   addComment: async (req: Request, res: Response) => {
     try {
-      const taskId = Number(req.params.id);
+      const taskId = Number(req.params.taskId);
       const { content } = req.body;
       const { id: authorId } = res.locals.user;
+
+      console.log(content, authorId, taskId);
 
       if (isNaN(taskId)) {
         return res.status(400).json({ con: false, msg: "Invalid taskId" });
@@ -24,7 +26,6 @@ export const commentController = {
         return res.status(400).json({ con: false, msg: "Content too long" });
       }
 
-      // ပြင်ဆင်ချက် - Argument ၃ ခု အစား Object ပုံစံဖြင့် ပို့ပေးခြင်း
       const newComment = await commentService.createComment({
         taskId,
         authorId,
@@ -42,7 +43,7 @@ export const commentController = {
 
   getComments: async (req: Request, res: Response) => {
     try {
-      const taskId = Number(req.params.id);
+      const taskId = Number(req.params.taskId);
       const comments = await commentService.getCommentsByTaskId(taskId);
 
       return res.status(200).json({ con: true, data: comments });
@@ -51,12 +52,19 @@ export const commentController = {
     }
   },
 
-  // Comment ပြင်ရန်
   updateComment: async (req: Request, res: Response) => {
     try {
-      const { commentId } = req.params;
+      const commentId = Number(req.params.commentId);
       const { content } = req.body;
       const { id: authorId } = res.locals.user;
+
+      if (!commentId) {
+        return res.status(400).json({ con: false, msg: "Invalid commentId" });
+      }
+
+      if (!content) {
+        return res.status(400).json({ con: false, msg: "Content is required" });
+      }
 
       const result = await commentService.updateComment(Number(commentId), authorId, content);
 

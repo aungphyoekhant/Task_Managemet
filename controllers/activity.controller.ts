@@ -1,15 +1,23 @@
 import { Request, Response } from "express";
 import { activityService } from "../services/activity.service";
+import { authService } from "../services/auth.service";
 
 export const activityController = {
   getActivityLogs: async (req: Request, res: Response) => {
     try {
-      const user = res.locals.user;
+      const userId = Number(res.locals.user.id);
 
-      if (user.role !== "OWNER" && user.role !== "ADMIN") {
+      console.log("user id is : ", userId);
+
+      const workspaceId = Number(req.params.workspaceId);
+      console.log("Workspac Id is : ", workspaceId);
+
+      const data = await authService.getWorkspaceUserRole({ userId, workspaceId });
+      console.log(data);
+
+      if (data?.role !== "OWNER" && data?.role !== "ADMIN") {
         return res.status(403).json({ con: false, msg: "Access denied: You don't have permission" });
       }
-      const workspaceId = Number(req.params.workspaceId);
 
       if (isNaN(workspaceId)) {
         return res.status(400).json({ con: false, msg: "Invalid workspace ID" });

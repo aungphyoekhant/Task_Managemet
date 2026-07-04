@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { projectService } from "../services/project.service";
+import { authService } from "../services/auth.service";
+import { number } from "joi";
 
 export const projectController = {
   // 1. Get All Projects
@@ -28,28 +30,39 @@ export const projectController = {
   },
 
   createProject: async (req: Request, res: Response) => {
+    const { projectName, description, startDate, endDate, workspaceId } = req.body;
+
+    const userId = res.locals.user.id;
+
+    const parsedWorkspaceId = Number(workspaceId);
+
+    if (isNaN(parsedWorkspaceId)) {
+      return res.status(400).json({ con: false, msg: "Invalid workspaceId" });
+    }
+
+    if (!projectName || !workspaceId) {
+      return res.status(400).json({ con: false, msg: "Project name and workspaceId are required" });
+    }
+
     try {
-      const { role, id: userId } = res.locals.user;
+      const member = await authService.getWorkspaceUserRole({ userId, workspaceId: parsedWorkspaceId });
 
-      if (role !== "OWNER" && role !== "ADMIN") {
-        return res.status(403).json({
-          con: false,
-          msg: "Access denied: Only Owners and Admins can create projects",
-        });
+      if (!member) {
+        return res.status(404).json({ con: false, msg: "Not a member of this workspace" });
       }
 
-      const { projectName, description, startDate, endDate, workspaceId } = req.body;
-
-      if (!projectName || !workspaceId) {
-        return res.status(400).json({ con: false, msg: "Project name and workspaceId are required" });
+      if (member.role !== "OWNER" && member.role !== "ADMIN") {
+        return res.status(403).json({ con: false, msg: "Access denied" });
       }
+
+      console.log(member.role);
 
       const project = await projectService.createProject({
         projectName,
         description: description || null,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        workspaceId: Number(workspaceId),
+        workspaceId: parsedWorkspaceId,
         createBy: userId,
       });
 
@@ -66,17 +79,13 @@ export const projectController = {
       return res.status(500).json({ con: false, msg: "Internal Server Error" });
     }
   },
-
   // 4. Update Project
   updateProject: async (req: Request, res: Response) => {
     try {
-      const { role } = res.locals.user;
-
-      if (role !== "ADMIN" && role !== "OWNER") {
-        return res.status(403).json({ con: false, msg: "Access denied: Admin or Owner only" });
-      }
-
       const projectId = Number(req.params.projectId);
+      const workspaceId = Number(req.params.workspaceId);
+      if (!workspaceId) return res.status(400).json({ con: false, msg: "WorkspaceId is required" });
+
       const { name, description, startDate, endDate } = req.body;
 
       if (!name || !description || !startDate || !endDate) {
@@ -93,13 +102,20 @@ export const projectController = {
   // 5. Delete Project
   deleteProject: async (req: Request, res: Response) => {
     try {
-      const { role } = res.locals.user;
+      const userId = res.locals.user.id;
+      const workspaceId = Number(req.params.workspaceId);
+      const projectId = Number(req.params.projectId);
 
-      if (role !== "ADMIN" && role !== "OWNER") {
+      if (!projectId) return res.status(400).json({ con: false, msg: "ProjectId is required" });
+
+      const data = await authService.getWorkspaceUserRole({ userId, workspaceId });
+
+      if (!data) {
+        return res.status(404).json({ con: false, msg: "Workspace not found" });
+      }
+      if (data.role !== "ADMIN" && data.role !== "OWNER") {
         return res.status(403).json({ con: false, msg: "Access denied: Admin or Owner only" });
       }
-
-      const projectId = Number(req.params.projectId);
       await projectService.deleteProject(projectId);
       return res.status(200).json({ con: true, msg: "Project deleted successfully" });
     } catch (error) {

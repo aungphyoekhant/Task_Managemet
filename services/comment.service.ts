@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { ActivityLog } from "../services/audit.service";
+import { auditService } from "./audit.service";
 
 type CommentType = {
   taskId: number;
@@ -43,7 +43,7 @@ export const commentService = {
         },
       });
 
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: task.workspaceId,
         userId: data.authorId,
         action: "CREATE_COMMENT",
@@ -77,7 +77,7 @@ export const commentService = {
         },
       });
 
-      await ActivityLog(tx, {
+      await auditService.ActivityLog({
         workspaceId: updatedComment.workspaceId,
         userId: authorId,
         action: "UPDATE_COMMENT",
@@ -115,7 +115,7 @@ export const commentService = {
         });
 
         // ၄။ Activity Log (AWAIT လုပ်ပေးပါ)
-        await ActivityLog(tx, {
+        await auditService.ActivityLog({
           workspaceId: comment.workspaceId,
           userId: authorId,
           action: "DELETE_COMMENT",

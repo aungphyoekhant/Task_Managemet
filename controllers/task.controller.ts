@@ -4,26 +4,34 @@ import { taskService } from "../services/task.service";
 export const taskController = {
   createTask: async (req: Request, res: Response) => {
     try {
-      const { projectId, assignedTo, title, description, priority, status, dueDate, workspaceId } = req.body;
-      const { id: userId } = res.locals.user;
-
-      if (!projectId || !assignedTo || !title || !workspaceId) {
-        return res.status(400).json({ con: false, msg: "Missing required fields (projectId, assignedTo, title, workspaceId)" });
+      const userId = Number(res.locals.user.id);
+      if (!userId) {
+        return res.status(401).json({ con: false, msg: "Unauthorized" });
       }
 
-      // ၂။ ပိုင်ဆိုင်မှုစစ်ဆေးခြင်း
-      if (!(await taskService.canManageProjectTasks(Number(projectId), userId))) {
-        return res.status(403).json({ con: false, msg: "Access denied" });
+      const { projectId, assignedTo, title, description, priority, status, dueDate, workspaceId } = req.body;
+
+      if (!projectId || !assignedTo || !title || !workspaceId) {
+        return res.status(400).json({ con: false, msg: "Missing required fields" });
+      }
+
+      const pId = Number(projectId);
+      const targetUserId = Number(assignedTo);
+      const wId = Number(workspaceId);
+
+      const canManage = await taskService.canManageProjectTasks(pId, userId);
+      if (!canManage) {
+        return res.status(403).json({ con: false, msg: "Access denied: You don't have permission to manage this project" });
       }
 
       const newTask = await taskService.createTask({
-        workspaceId: Number(workspaceId),
-        projectId: Number(projectId),
-        assignedTo: Number(assignedTo),
+        workspaceId: wId,
+        projectId: pId,
+        assignedTo: targetUserId,
         title,
         description,
-        priority,
-        status,
+        priority: priority || "MEDIUM",
+        status: status || "TODO",
         dueDate: dueDate ? new Date(dueDate) : undefined,
       });
 
@@ -36,7 +44,7 @@ export const taskController = {
       }
 
       if (error.code === "P2003") {
-        return res.status(400).json({ con: false, msg: "Invalid reference ID (Workspace or Project)" });
+        return res.status(400).json({ con: false, msg: "Invalid reference ID (Workspace or Project not found)" });
       }
 
       return res.status(500).json({ con: false, msg: error.message || "Internal Server Error" });
@@ -48,6 +56,20 @@ export const taskController = {
       const task = await taskService.getTaskById(Number(req.params.taskId));
       if (!task) return res.status(404).json({ con: false, msg: "Task not found" });
       return res.status(200).json({ con: true, data: task });
+    } catch (error: any) {
+      return res.status(500).json({ con: false, msg: error.message });
+    }
+  },
+
+  getTasks: async (req: Request, res: Response) => {
+    try {
+      const { workspaceId, cursor, limit } = req.query;
+
+      if (!workspaceId) return res.status(400).json({ con: false, msg: "workspaceId is required" });
+
+      const result = await taskService.getTasks(Number(workspaceId), cursor ? Number(cursor) : undefined, limit ? Number(limit) : 10);
+
+      return res.status(200).json({ con: true, ...result });
     } catch (error: any) {
       return res.status(500).json({ con: false, msg: error.message });
     }

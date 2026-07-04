@@ -1,12 +1,45 @@
 import { prisma } from "../lib/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { AccessPayload, RefreshPayload, ComparePassword, UpdateTokenPayload, RefreshTokenPayload } from "../types/global";
+import { AccessPayload, RefreshPayload, ComparePassword, UpdateTokenPayload, RefreshTokenPayload, WorkspaceUserRole } from "../types/global";
+
+import { WorkspaceUserParams } from "../types/global";
 
 export const authService = {
   // FindByEmail
   findByEmail: async (email: string) => {
     return await prisma.user.findUnique({ where: { email } });
+  },
+
+  getWorkspaceById: async (id: number) => {
+    return await prisma.workspace.findUnique({
+      where: { id },
+    });
+  },
+
+  getWorkspaceUserRole: async (data: WorkspaceUserParams) => {
+    const member = await prisma.workspaceUser.findFirst({
+      where: {
+        userId: data.userId,
+        workspaceId: data.workspaceId,
+      },
+      select: { role: true, userId: true, workspaceId: true },
+    });
+
+    return member;
+  },
+
+  getWorkspaceUser: async (data: WorkspaceUserRole) => {
+    const result = await prisma.workspaceUser.findFirst({
+      where: {
+        userId: data.userId,
+        workspaceId: data.workspaceId,
+      },
+
+      select: { role: true, userId: true, workspaceId: true },
+    });
+
+    return result;
   },
 
   // ComparePassword

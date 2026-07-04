@@ -4,7 +4,6 @@ import { deleteFile } from "../utils/fileHandler";
 
 export const profileController = {
   getProfile: async (req: Request, res: Response) => {
-    console.log(res.locals.user);
     const user = res.locals.user;
 
     if (!user || !user.id) {
@@ -38,10 +37,6 @@ export const profileController = {
 
       const existingData = await profileService.getProfile(userId);
 
-      if (req.file && existingData?.profile?.avatar) {
-        deleteFile(existingData.profile.avatar);
-      }
-
       const avatarUrl = req.file ? `/uploads/${req.file.filename}` : body.avatar;
       const { name, workspaceId, jobTitle, bio, phone } = body;
 
@@ -59,6 +54,10 @@ export const profileController = {
         phone,
         workspaceId: parsedWorkspaceId,
       });
+
+      if (req.file && existingData?.profile?.avatar) {
+        deleteFile(existingData.profile.avatar);
+      }
 
       return res.json({
         con: true,
