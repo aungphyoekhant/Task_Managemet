@@ -33,6 +33,7 @@ export const memberController = {
       await memberService.deleteMember(wId, uId);
 
       return res.status(200).json({ msg: "Deleted Member Successfully" });
+      
     } catch (error) {
       console.error(error);
       return res.status(500).json({ msg: "Internal Server Error" });

@@ -36,7 +36,21 @@ export const projectUserService = {
   getMembersByProject: async (projectId: number) => {
     return await prisma.projectUser.findMany({
       where: { projectId },
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                name: true,
+                avatar: true,
+                jobTitle: true,
+              },
+            },
+          },
+        },
+      },
     });
   },
 
@@ -45,4 +59,18 @@ export const projectUserService = {
       where: { id: projectUserId },
     });
   },
+
+  getProjectMemberById : async (projectUserId: number) => {
+    return await prisma.projectUser.findUnique({
+      where: { id: projectUserId },
+      include: { project: true },
+  })
+  },
+
+  getProjectUserByUserId : async (projectId: number, userId: number) => {
+    return await prisma.projectUser.findFirst({
+      where: { projectId: projectId, userId: userId },
+  })
+  }
+
 };

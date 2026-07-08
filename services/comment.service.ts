@@ -94,10 +94,9 @@ export const commentService = {
       return await prisma.$transaction(async (tx) => {
         // ၁။ Comment ကို Delete လုပ်ပါ
         const comment = await tx.comment.delete({
-          where: { id: commentId, authorId }, // AuthorID ပါထည့်စစ်ခြင်းဖြင့် Security ပိုကောင်းစေပါတယ်
+          where: { id: commentId, authorId },
         });
 
-        // ၂။ Notification ဖန်တီးပါ
         const notification = await tx.notification.create({
           data: {
             workspaceId: comment.workspaceId,
@@ -106,7 +105,7 @@ export const commentService = {
           },
         });
 
-        // ၃။ UserNoti ဖန်တီးပါ
+        
         await tx.userNoti.create({
           data: {
             userId: authorId,
@@ -114,16 +113,16 @@ export const commentService = {
           },
         });
 
-        // ၄။ Activity Log (AWAIT လုပ်ပေးပါ)
+        
         await auditService.ActivityLog({
           workspaceId: comment.workspaceId,
           userId: authorId,
           action: "DELETE_COMMENT",
-          entityType: "TASK", // သင့် DB Schema အတိုင်း သေချာစစ်ပါ
+          entityType: "TASK",
           entityId: commentId,
         });
 
-        return comment; // အောင်မြင်ရင် Deleted comment ကိုပြန်ပေးလိုက်ပါ
+        return comment; 
       });
     } catch (error) {
       console.error("Delete Comment Error:", error);

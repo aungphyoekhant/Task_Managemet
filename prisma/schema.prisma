@@ -189,7 +189,7 @@ model Notification {
   userNotis UserNoti[]
 }
 
-model UserNoti {
+model UserNoti{
   id             Int          @id @default(autoincrement())
   userId         Int
   notificationId Int

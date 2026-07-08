@@ -26,4 +26,22 @@ export const invitationService = {
   findUserByEmail: async (email: string) => {
     return await prisma.user.findUnique({ where: { email } });
   },
+
+  getWorkspaceData : async(workspaceId : number, userId : number) => {
+    const [member, workspace] = await Promise.all([
+      prisma.workspaceUser.findFirst({
+        where : {
+          workspaceId, userId,
+        }
+      }),
+
+      prisma.workspace.findUnique({
+        where : {
+          id : workspaceId
+        }
+      })
+    ])
+
+    return {member,workspace}
+  }
 };

@@ -1,19 +1,46 @@
 import { Request, Response } from "express";
 import { taskService } from "../services/task.service";
+import { createTaskValidator,updateTaskValidator} from "../validators/taskauth";
+import { stat } from "node:fs";
+import { updateAssignedTaskValidator } from "../validators/taskauth";
 
 export const taskController = {
   createTask: async (req: Request, res: Response) => {
     try {
+       const { projectId, assignedTo, title, description, priority, status, dueDate, workspaceId } = req.body;
       const userId = Number(res.locals.user.id);
-      if (!userId) {
-        return res.status(401).json({ con: false, msg: "Unauthorized" });
+
+      console.log(req.body)
+
+
+      const {error, value} = createTaskValidator.validate({
+        workspaceId,
+        userId,
+        projectId,
+        assignedTo,
+        title,
+        description,
+        priority,
+        status,
+        dueDate,
+      })
+
+      console.log(value)
+
+
+      if(error){
+        return res.status(400).json({con : false, msg : error.details[0].message})
       }
 
-      const { projectId, assignedTo, title, description, priority, status, dueDate, workspaceId } = req.body;
 
-      if (!projectId || !assignedTo || !title || !workspaceId) {
-        return res.status(400).json({ con: false, msg: "Missing required fields" });
-      }
+
+      // if (!userId) {
+      //   return res.status(401).json({ con: false, msg: "Unauthorized" });
+      // }
+
+      // if (!projectId || !assignedTo || !title || !workspaceId) {
+      //   return res.status(400).json({ con: false, msg: "Missing required fields" });
+      // }
 
       const pId = Number(projectId);
       const targetUserId = Number(assignedTo);
@@ -36,16 +63,10 @@ export const taskController = {
       });
 
       return res.status(201).json({ con: true, msg: "Task created successfully", data: newTask });
+
+
     } catch (error: any) {
       console.error("Create Task Error:", error);
-
-      if (error.message === "Member not found") {
-        return res.status(400).json({ con: false, msg: "User is not a member of this project" });
-      }
-
-      if (error.code === "P2003") {
-        return res.status(400).json({ con: false, msg: "Invalid reference ID (Workspace or Project not found)" });
-      }
 
       return res.status(500).json({ con: false, msg: error.message || "Internal Server Error" });
     }
@@ -77,13 +98,22 @@ export const taskController = {
 
   updateTask: async (req: Request, res: Response) => {
     try {
+
+      const {error : paramsError} = updateTaskValidator.params.validate(req.params)
+
+      const {error : bodyError} = updateTaskValidator.body.validate(req.body)
+
+      if(paramsError){
+        return res.status(400).json({con : false, msg : paramsError.details[0].message})
+      }
+      if(bodyError){
+        return res.status(400).json({con : false, msg : bodyError.details[0].message})
+      }
+
       const taskId = Number(req.params.taskId);
       const userId = res.locals.user.id;
       const { workspaceId, ...updateData } = req.body;
 
-      if (!workspaceId) {
-        return res.status(400).json({ con: false, msg: "workspaceId is required" });
-      }
 
       const task = await taskService.getTaskById(taskId);
       if (!task) {
@@ -105,7 +135,21 @@ export const taskController = {
   },
 
   updateAssignedTask: async (req: Request, res: Response) => {
-    try {
+    try { 
+
+      const {error: paramsError} = updateAssignedTaskValidator.params.validate(req.params)
+
+      const {error : bodyError, value} = updateAssignedTaskValidator.body.validate(req.body)
+
+      if(paramsError){
+        return res.status(400).json({con : false, msg : paramsError.details[0].message})
+      }
+
+      if(bodyError){
+        return res.status(400).json({con : false, msg : bodyError.details[0].message})
+      }
+
+
       const taskId = Number(req.params.taskId);
       const userId = res.locals.user.id;
 
@@ -116,12 +160,7 @@ export const taskController = {
         return res.status(403).json({ con: false, msg: "Not assigned to this task" });
       }
 
-      const { status, priority } = req.body;
-      const updateData: any = {};
-      if (status !== undefined) updateData.status = status;
-      if (priority !== undefined) updateData.priority = priority;
-
-      const updated = await taskService.updateAssignedTask(taskId, updateData, userId);
+      const updated = await taskService.updateAssignedTask(taskId, value, userId);
 
       return res.status(200).json({ con: true, data: updated });
     } catch (error: any) {
@@ -139,7 +178,7 @@ export const taskController = {
         return res.status(403).json({ con: false, msg: "Unauthorized" });
       }
 
-      // userId ကို Argument အနေနဲ့ ထည့်ပေးလိုက်ပါ
+      // userId 
       await taskService.deleteTask(taskId, userId);
 
       return res.status(200).json({ con: true, msg: "Deleted" });

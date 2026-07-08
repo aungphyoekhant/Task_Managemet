@@ -1,31 +1,31 @@
 import { Request, Response } from "express";
 import { updateRoleServices } from "../services/update_role.service";
 import { authService } from "../services/auth.service";
+import { updateRoleValidator } from "../validators/updaterole";
 
 export const updateRoleController = {
   updateRole: async (req: Request, res: Response) => {
     try {
+
+      console.log(req.body)
+      console.log(req.params)
+
+      const { error: paramsError } = updateRoleValidator.params.validate(req.params);
+
+
+      const { error: bodyError, value } = updateRoleValidator.body.validate(req.body);
+
+      if (paramsError) {
+        return res.status(400).json({ con: false, msg: paramsError.details[0].message });
+      }
+      if (bodyError) {
+        return res.status(400).json({ con: false, msg: bodyError.details[0].message });
+      }
+
+
       const { workspaceId, userId } = req.params;
-      const { newRole } = req.body;
+      const { newRole } = value; 
 
-      // ၁။ Validation (Role string ဟုတ်မဟုတ်)
-      if (!newRole || typeof newRole !== "string") {
-        return res.status(400).json({ con: false, msg: "Role is required and must be a string" });
-      }
-
-      const roleUpper = newRole.toUpperCase();
-
-      // ၂။ Role Check (Owner ကို တိုက်ရိုက် Assign လုပ်ခွင့်မပေးပါ)
-      const allowedRoles = ["ADMIN", "MEMBER"];
-      if (!allowedRoles.includes(roleUpper)) {
-        return res.status(400).json({ con: false, msg: "Invalid role. Only ADMIN or MEMBER allowed." });
-      }
-
-      if (!workspaceId || !userId) {
-        return res.status(400).json({ con: false, msg: "WorkspaceId and UserId are required" });
-      }
-
-      // ၃။ Authorization (Workspace Owner ဟုတ်မဟုတ် စစ်ရန်)
       const currentUserId = Number(res.locals.user.id);
       const workspace = await authService.getWorkspaceById(Number(workspaceId));
 
@@ -37,7 +37,6 @@ export const updateRoleController = {
         return res.status(403).json({ con: false, msg: "Access Denied: Only Owner can update roles" });
       }
 
-      // ၄။ Target User ကို စစ်ဆေးရန် (Owner ကို ပြင်ခွင့်မရှိ)
       const targetUser = await authService.getWorkspaceUserRole({
         userId: Number(userId),
         workspaceId: Number(workspaceId),
@@ -51,12 +50,12 @@ export const updateRoleController = {
         return res.status(403).json({ con: false, msg: "Cannot modify an Owner's role" });
       }
 
-      await updateRoleServices.updateRole(Number(workspaceId), Number(userId), roleUpper);
+      await updateRoleServices.updateRole(Number(workspaceId), Number(userId), newRole);
 
       return res.status(200).json({
         con: true,
         msg: "Role updated successfully",
-        data: { role: roleUpper },
+        data: { role: newRole },
       });
     } catch (error) {
       console.error("Update Role Error:", error);

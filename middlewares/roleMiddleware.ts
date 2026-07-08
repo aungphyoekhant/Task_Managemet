@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { prisma } from "../lib/prisma"; // သင့် prisma instance
+import { prisma } from "../lib/prisma"; 
 
 export const checkWorkspaceRole = (allowedRoles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = res.locals.user.id;
-      console.log(userId);
+      console.log("Role Middleware : ",userId);
 
       if (!userId) {
         return res.status(400).json({ con: false, msg: "Missing user or workspace info" });

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { projectService } from "../services/project.service";
 import { authService } from "../services/auth.service";
 import { number } from "joi";
+import { createProjectValidator, updateProjectValidator } from "../validators/projectauth";
 
 export const projectController = {
   // 1. Get All Projects
@@ -21,31 +22,32 @@ export const projectController = {
   getProjectById: async (req: Request, res: Response) => {
     try {
       const projectId = Number(req.params.projectId);
+
       const project = await projectService.getProjectById(projectId);
+
       if (!project) return res.status(404).json({ con: false, msg: "Project not found" });
+
       return res.status(200).json({ con: true, msg: "Project Fetched", data: project });
+
     } catch (error) {
       return res.status(500).json({ con: false, msg: "Error fetching project" });
     }
   },
 
-  createProject: async (req: Request, res: Response) => {
+  createProject: async (req: Request , res: Response) => {
+
+    const {error , value} = createProjectValidator.validate(req.body)
+
+    if(error){
+      return res.status(400).json({con : false, msg : error.details[0].message})
+    }
+
     const { projectName, description, startDate, endDate, workspaceId } = req.body;
 
     const userId = res.locals.user.id;
 
-    const parsedWorkspaceId = Number(workspaceId);
-
-    if (isNaN(parsedWorkspaceId)) {
-      return res.status(400).json({ con: false, msg: "Invalid workspaceId" });
-    }
-
-    if (!projectName || !workspaceId) {
-      return res.status(400).json({ con: false, msg: "Project name and workspaceId are required" });
-    }
-
     try {
-      const member = await authService.getWorkspaceUserRole({ userId, workspaceId: parsedWorkspaceId });
+      const member = await authService.getWorkspaceUserRole({ userId, workspaceId: Number(workspaceId) });
 
       if (!member) {
         return res.status(404).json({ con: false, msg: "Not a member of this workspace" });
@@ -62,7 +64,7 @@ export const projectController = {
         description: description || null,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        workspaceId: parsedWorkspaceId,
+        workspaceId : Number(workspaceId),
         createBy: userId,
       });
 
@@ -72,9 +74,6 @@ export const projectController = {
         data: project,
       });
     } catch (error: any) {
-      if (error.code === "P2003") {
-        return res.status(400).json({ con: false, msg: "Invalid workspaceId: Workspace does not exist" });
-      }
       console.error("Create Project Error:", error);
       return res.status(500).json({ con: false, msg: "Internal Server Error" });
     }
@@ -82,18 +81,28 @@ export const projectController = {
   // 4. Update Project
   updateProject: async (req: Request, res: Response) => {
     try {
-      const projectId = Number(req.params.projectId);
-      const workspaceId = Number(req.params.workspaceId);
-      if (!workspaceId) return res.status(400).json({ con: false, msg: "WorkspaceId is required" });
 
-      const { name, description, startDate, endDate } = req.body;
+      const {error : paramsError, value : paramsValue} = updateProjectValidator.params.validate(req.params)
 
-      if (!name || !description || !startDate || !endDate) {
-        return res.status(400).json({ con: false, msg: "Missing required fields" });
+      const {error : bodyError, value: bodyValue} = updateProjectValidator.body.validate(req.body)
+
+      if(paramsError){
+        return res.status(400).json({con : false, msg : paramsError.details[0].message})
       }
 
-      const updatedProject = await projectService.updateProject(projectId, { name, description, startDate, endDate });
+      if(bodyError){
+        return res.status(400).json({con : false, msg : bodyError.details[0].message})
+      }
+
+      const {projectId, workspaceId} = paramsValue;
+      
+      
+
+      const updatedProject = await projectService.updateProject(Number(projectId), bodyValue);
+
       return res.status(200).json({ con: true, msg: "Project updated", data: updatedProject });
+
+      
     } catch (error) {
       return res.status(500).json({ con: false, msg: "Error updating project" });
     }

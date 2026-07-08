@@ -1,15 +1,17 @@
 import { prisma } from "../lib/prisma";
-
-import { TaskStatus } from "../generated/prisma/client";
-interface SearchBaseParams {
-  workspaceId: number;
-  q: string;
-  userId: number;
-  role: string;
-}
+import { TaskStatus } from "../generated/prisma/enums";
 
 export const searchService = {
-  searchProjects: async ({ workspaceId, q, userId, role }: SearchBaseParams & { status?: string }) => {
+
+   async verifyWorkspaceAccess(workspaceId: number, userId: number) {
+    const isMember = await prisma.workspaceUser.findFirst({
+      where: { workspaceId, userId },
+    });
+    if (!isMember) throw new Error("UNAUTHORIZED_ACCESS");
+  },
+
+
+  searchProjects: async (workspaceId: number, q: string) => {
     return await prisma.project.findMany({
       where: {
         workspaceId,
@@ -18,87 +20,54 @@ export const searchService = {
     });
   },
 
-  searchTasks: async ({ workspaceId, q, status, userId, role }: any) => {
+  searchTasksByTitle: async (workspaceId: number, projectId: number, userId: number, title: string) => {
+    await searchService.verifyWorkspaceAccess(workspaceId, userId);
     return await prisma.task.findMany({
-      where: {
-        workspaceId,
-        title: { contains: q, mode: "insensitive" },
-        ...(status && { status: TaskStatus }),
-      },
+      where: { workspaceId, projectId, title: { contains: title, mode: "insensitive" } },
     });
   },
-  searchUsers: async ({ workspaceId, q }: { workspaceId: number; q: string }) => {
+
+  searchTasksByStatus: async (workspaceId: number, projectId: number, userId: number, status: TaskStatus) => {
+    await searchService.verifyWorkspaceAccess(workspaceId, userId);
+    return await prisma.task.findMany({
+      where: { workspaceId, projectId, status },
+    });
+  },
+  
+
+
+  searchUsers: async (workspaceId: number,userId : number, q: string) => {
     return await prisma.workspaceUser.findMany({
       where: {
+        userId,
         workspaceId,
         user: {
-          OR: [{ profile: { name: { contains: q, mode: "insensitive" } } }, { email: { contains: q, mode: "insensitive" } }],
+          OR: [
+            { profile: { name: { contains: q, mode: "insensitive" } } },
+            { email: { contains: q, mode: "insensitive" } },
+          ],
         },
       },
-      select: {
-        id: true,
-        workspaceId: true,
-        userId: true,
-        role: true,
-        user: {
-          select: {
-            id: true,
-            email: true,
-            status: true,
-            createdAt: true,
-            profile: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                jobTitle: true,
-              },
-            },
-          },
-        },
-      },
+      include: { user: { include: { profile: true } } },
     });
   },
 
-  searchWorkspaces: async ({ userId, q }: { userId: number; q: string }) => {
+  searchWorkspaces: async (userId: number, q: string) => {
     return await prisma.workspace.findMany({
       where: {
-        OR: [{ ownerId: userId }, { workspaceUsers: { some: { userId } } }],
-        name: { contains: q, mode: "insensitive" },
+        AND: [
+          {
+            OR: [
+              { ownerId: userId },
+              { workspaceUsers: { some: { userId: userId } } }
+            ]
+          },
+          {
+            name: { contains: q, mode: "insensitive" }
+          }
+        ]
       },
     });
   },
 
-  globalSearch: async ({ workspaceId, q, userId, role }: SearchBaseParams) => {
-    const [projects, tasks, users] = await Promise.all([
-      // Project ရှာခြင်း
-      prisma.project.findMany({
-        where: { workspaceId, name: { contains: q, mode: "insensitive" } },
-      }),
-
-      // Task ရှာခြင်း
-      prisma.task.findMany({
-        where: { workspaceId, title: { contains: q, mode: "insensitive" } },
-      }),
-
-      // User ရှာခြင်း (Profile ထဲမှ name ကို ရှာခြင်း)
-      prisma.workspaceUser.findMany({
-        where: {
-          workspaceId,
-          user: {
-            profile: {
-              name: { contains: q, mode: "insensitive" },
-            },
-          },
-        },
-        include: {
-          user: {
-            include: { profile: true },
-          },
-        },
-      }),
-    ]);
-
-    return { projects, tasks, users };
-  },
 };

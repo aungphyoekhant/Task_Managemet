@@ -1,55 +1,65 @@
 import { Request, Response } from "express";
 import { workspaceService } from "../services/workspace.service";
 import { deleteFile } from "../utils/fileHandler";
+import { createWorkspaceValidator, dropWorkspaceValidator, getWorkspaceValidator, modifyWorkspaceValidator } from "../validators/workspaceauth";
 export const workspaceController = {
-  getAllWorkspace: async (req: Request, res: Response) => {
-    const user = res.locals.user;
+ getAllWorkspace: async (req: Request, res: Response) => {
+    const userId = Number(res.locals.user.id);
 
-    console.log(user);
 
-    if (!user) {
+    if (!userId || isNaN(userId)) {
       return res.status(401).json({ con: false, msg: "User not found" });
     }
 
     try {
-      const workspaces = await workspaceService.getAllWorkspace(user.id);
-      res.status(200).json({
+      const workspaces = await workspaceService.getAllWorkspace(userId);
+      return res.status(200).json({
         con: true,
         msg: "Workspaces fetched successfully",
-        workspaces,
+        result : workspaces
       });
+      
+
     } catch (error) {
       console.error("Get All Workspaces Error:", error);
+      return res.status(500).json({ con: false, msg: "Internal Server Error" });
     }
   },
 
   getWorkspace: async (req: Request, res: Response) => {
-    const user = res.locals.user;
+
+    const userId = Number(res.locals.user.id);
     const workspaceId = Number(req.params.id);
 
-    if (!user) {
-      return res.status(401).json({ msg: "User not found" });
-    }
-    if (!workspaceId) {
-      return res.status(400).json({ msg: "Workspace id is required" });
+    const {error, value} = getWorkspaceValidator.validate({
+      userId,
+      workspaceId
+    })
+
+    console.log(value)
+    if(error) {
+      return res.status(400).json({con : false,msg : error.details[0].message })
     }
 
+
     try {
-      const workspace = await workspaceService.getWorkspace(user.id, workspaceId);
+      const workspace = await workspaceService.getWorkspace(userId, workspaceId);
       res.status(200).json({
         con: true,
         msg: "Workspace fetched successfully",
         workspace,
       });
+
+      console.log(workspace)
     } catch (error) {
       console.error("Get Workspace Error:", error);
       res.status(500).json({ msg: "Error fetching workspace" });
     }
   },
 
-  getAllWrokspaceByUserId: async (req: Request, res: Response) => {
+  getAllWorkspaceByUserId: async (req: Request, res: Response) => {
     try {
-      // Auth middleware ကနေတစ်ဆင့် ရလာတဲ့ userId ကို သုံးခြင်း
+      
       const userId = Number(res.locals.user.id);
 
       if (!userId) {
@@ -70,98 +80,118 @@ export const workspaceController = {
   },
 
   createWorkspace: async (req: Request, res: Response) => {
+
     const { name } = req.body;
     const userId = Number(res.locals.user.id);
-    const file = req.file;
+    const logoUrl = req.file ? `/uploads/${req.file.filename}` : "";
 
-    if (!name) {
-      if (file) deleteFile(file.path);
-      return res.status(400).json({ msg: "Workspace name is required" });
-    }
-
-    if (!file) {
-      return res.status(400).json({ msg: "Workspace logo is required" });
+    const { error, value } = createWorkspaceValidator.validate({
+      name,
+      logo: logoUrl,
+      userId,
+    });
+    
+    if (error) {
+      if (req.file) deleteFile(req.file.path); 
+      return res.status(400).json({ con: false, msg: error.details[0].message });
     }
 
     try {
-      const logo = `/uploads/${file.filename}`;
-      const workspace = await workspaceService.createWorkspace(userId, name, logo);
+      const workspace = await workspaceService.createWorkspace(
+        value.userId,
+        value.name,
+        value.logo,
+      );
 
       res.status(201).json({
         con: true,
         msg: "Workspace created successfully",
-        workspace,
+        result : workspace,
       });
     } catch (error) {
       console.error("Create Workspace Error:", error);
-
-      if (file) {
-        deleteFile(file.path);
-      }
-
       res.status(500).json({ msg: "Error creating workspace" });
     }
   },
 
-  modifyWorkspace: async (req: Request, res: Response) => {
+ modifyWorkspace: async (req: Request, res: Response) => {
     const { name } = req.body;
-    const user = res.locals.user;
+    const userId = Number(res.locals.user.id);
     const workspaceId = Number(req.params.id);
-    const file = req.file;
+    const file = req.file; 
+    const logoUrl = file ? `/uploads/${file.filename}` : "";
 
-    if (!user) return res.status(401).json({ con: false, msg: "User not found" });
-    if (!workspaceId) return res.status(400).json({ con: false, msg: "Workspace id is required" });
-    if (!name) return res.status(400).json({ con: false, msg: "Workspace name is required" });
+    const { error, value } = modifyWorkspaceValidator.validate({
+      name :name,
+      workspaceId: workspaceId,
+      userId: userId,
+      logo: logoUrl
+    });
+    console.log(value)
+
+    if (error) {
+      if (file) deleteFile(file.path);
+      return res.status(400).json({ con: false, msg: error.details[0].message });
+    }
 
     try {
-      const existingWorkspace = await workspaceService.getWorkspace(user.id, workspaceId);
+      // 2. Fetch existing workspace to handle old file deletion
+      const existingWorkspace = await workspaceService.getWorkspace(userId, workspaceId);
+      
       if (!existingWorkspace) {
         if (file) deleteFile(file.path);
         return res.status(404).json({ con: false, msg: "Workspace not found" });
       }
 
-      const updateData: any = { name };
+      // 3. Prepare update data
+      const updateData: any = { name: value.name };
       if (file) {
-        updateData.logo = `/uploads/${file.filename}`;
+        updateData.logo = value.logo;
       }
 
-      const workspace = await workspaceService.modifyWorkspace(user.id, workspaceId, updateData);
+      //  Update in Database (Use userId, not user.id)
+      const workspace = await workspaceService.modifyWorkspace(userId, workspaceId, updateData);
 
+      //  Delete old logo if a new one was uploaded
       if (file && existingWorkspace.logo) {
-        deleteFile(existingWorkspace.logo);
+        deleteFile(existingWorkspace.logo); 
       }
 
       res.status(200).json({
         con: true,
         msg: "Workspace updated successfully",
-        workspace,
+        result : workspace,
       });
     } catch (error) {
       console.error("Modify Workspace Error:", error);
-
-      if (file) {
-        deleteFile(file.path);
-      }
-
+      if (file) deleteFile(file.path); 
       res.status(500).json({ con: false, msg: "Error updating workspace" });
     }
   },
 
   dropWorkspace: async (req: Request, res: Response) => {
-    const user = res.locals.user;
+    const userId = Number(res.locals.user.id)
     const workspaceId = Number(req.params.id);
 
-    if (!user) return res.status(401).json({ msg: "User not found" });
-    if (!workspaceId) return res.status(400).json({ msg: "Workspace id is required" });
+    const {error, value} = dropWorkspaceValidator.validate({
+      userId : userId,
+      workspaceId : workspaceId
+    })
+    
+    if(error){
+      return res.status(400).json({con : false, msg : error.details[0].message })
+    }
+
 
     try {
-      const workspace = await workspaceService.getWorkspace(user.id, workspaceId);
+      
+      const workspace = await workspaceService.getWorkspace(userId, workspaceId);
 
       if (!workspace) {
         return res.status(404).json({ msg: "Workspace not found" });
       }
 
-      await workspaceService.dropWorkspace(user.id, workspaceId);
+      await workspaceService.dropWorkspace(userId, workspaceId);
 
       if (workspace.logo) {
         deleteFile(workspace.logo);

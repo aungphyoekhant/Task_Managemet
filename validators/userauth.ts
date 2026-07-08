@@ -13,3 +13,5 @@ export const registerValidator = Joi.object({
   name: Joi.string().min(4).max(30).required(),
   token: Joi.string().optional().allow(null, ""),
 });
+
+

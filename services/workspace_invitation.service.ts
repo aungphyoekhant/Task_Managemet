@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { transporter } from "../lib/nodemailer";
 import { Role } from "../generated/prisma/client";
 
-export const invitationService = {
+export const workspaceInvitationService = {
   inviteUser: async (userId: number, workspaceId: number, email: string, role: string) => {
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },

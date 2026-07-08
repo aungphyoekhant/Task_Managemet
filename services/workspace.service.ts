@@ -59,7 +59,7 @@ export const workspaceService = {
     });
   },
 
-  createWorkspace: async (userId: number, name: string, logo?: string) => {
+  createWorkspace: async (userId : number, name: string, logo?: string) => {
     try {
       return await prisma.$transaction(async (tx) => {
         const workspace = await tx.workspace.create({
@@ -70,6 +70,8 @@ export const workspaceService = {
           },
         });
         console.log("Workspace Created ID:", workspace.id);
+        console.log("Workspace Name : ", name)
+        console.log("ownerId", userId)
 
         const userRole = await tx.workspaceUser.create({
           data: {

@@ -5,11 +5,11 @@ import { upload } from "../middlewares/upload";
 export const router = express.Router();
 import { checkWorkspaceRole } from "../middlewares/roleMiddleware";
 
-router.get("/allworkspacebyuserid", auth, workspaceController.getAllWrokspaceByUserId);
+router.get("/allworkspacebyuserid", auth, workspaceController.getAllWorkspaceByUserId);
 
 router.get("/workspace/:id", auth, checkWorkspaceRole(["OWNER"]), workspaceController.getWorkspace);
 
-router.get("/workspaces", auth, checkWorkspaceRole(["OWNER"]), workspaceController.getAllWorkspace);
+router.get("/allworkspaces", auth, checkWorkspaceRole(["OWNER"]), workspaceController.getAllWorkspace);
 
 router.post("/workspace", auth, checkWorkspaceRole(["OWNER"]), upload.single("logo"), workspaceController.createWorkspace);
 

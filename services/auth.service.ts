@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { AccessPayload, RefreshPayload, ComparePassword, UpdateTokenPayload, RefreshTokenPayload, WorkspaceUserRole } from "../types/global";
+import { AccessPayload, RefreshPayload, ComparePassword, UpdateTokenPayload, RefreshTokenPayload, WorkspaceUserRole, WorkspaceUser } from "../types/global";
 
 import { WorkspaceUserParams } from "../types/global";
 
@@ -15,6 +15,15 @@ export const authService = {
     return await prisma.workspace.findUnique({
       where: { id },
     });
+  },
+
+  findWorkspaceUser: async (data : WorkspaceUser) => {
+    return await prisma.workspaceUser.findFirst({
+      where : {
+        workspaceId : data.workspaceId,
+        userId : data.userId
+      }
+    })
   },
 
   getWorkspaceUserRole: async (data: WorkspaceUserParams) => {

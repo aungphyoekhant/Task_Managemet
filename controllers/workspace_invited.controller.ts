@@ -1,33 +1,37 @@
 import { Request, Response } from "express";
-import { prisma } from "../lib/prisma";
-import { invitationService } from "../services/workspace_invitation.service";
+import { workspaceInvitationService } from "../services/workspace_invitation.service";
+import { invitationService } from "../services/invitation.service";
+import { workspaceInviteValidator } from "../validators/workspaceInvite-auth";
+
 
 export const workspaceInvitedController = {
   inviteUser: async (req: Request, res: Response) => {
     try {
       const { workspaceId, email, role } = req.body;
-      const user = res.locals.user;
+      const userId = Number(res.locals.user.id);
       const targetRole = role?.toUpperCase();
 
-      console.log(targetRole);
+      const {error, value}= workspaceInviteValidator.validate({
+        workspaceId,
+        email,
+        role,
+      })
 
-      if (!workspaceId || !email || !role) {
-        return res.status(400).json({ con: false, msg: "Missing required fields" });
+      if(error){
+        return res.status(400).json({con : false, msg : error.details[0].message})
       }
 
-      const [member, workspace] = await Promise.all([
-        prisma.workspaceUser.findFirst({
-          where: { workspaceId: Number(workspaceId), userId: user.id },
-        }),
-        prisma.workspace.findUnique({
-          where: { id: Number(workspaceId) },
-        }),
-      ]);
+      const data = await invitationService.getWorkspaceData(Number(workspaceId), userId);
 
-      if (!workspace) return res.status(404).json({ con: false, msg: "Workspace not found" });
+      
+      if (!data || !data.workspace || !data.member) {
+        return res.status(404).json({ con: false, msg: "Workspace or Membership not found" });
+      }
 
-      const isOwner = member?.role === "OWNER";
-      const isAdmin = member?.role === "ADMIN";
+      const { member, workspace } = data;
+
+      const isOwner = member.role === "OWNER";
+      const isAdmin = member.role === "ADMIN";
 
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ con: false, msg: "Unauthorized: You don't have permission" });
@@ -41,7 +45,7 @@ export const workspaceInvitedController = {
         return res.status(403).json({ con: false, msg: "You cannot invite another owner" });
       }
 
-      const result = await invitationService.inviteUser(user.id, Number(workspaceId), email, role);
+      const result = await workspaceInvitationService.inviteUser(userId, Number(workspaceId), email, role);
 
       return res.status(201).json({
         con: true,

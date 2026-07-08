@@ -1,44 +1,43 @@
 import { Request, Response } from "express";
 import { commentService } from "../services/comment.service";
+import { addCommentValidator,updateCommentValidator } from "../validators/comment";
 
 export const commentController = {
-  addComment: async (req: Request, res: Response) => {
+  addComment : async (req: Request, res: Response) => {
     try {
-      const taskId = Number(req.params.taskId);
-      const { content } = req.body;
-      const { id: authorId } = res.locals.user;
+     const { error: paramsError, value: paramsValue } = addCommentValidator.params.validate(req.params);
 
-      console.log(content, authorId, taskId);
+     const { error: bodyError, value: bodyValue } = addCommentValidator.body.validate(req.body);
 
-      if (isNaN(taskId)) {
-        return res.status(400).json({ con: false, msg: "Invalid taskId" });
-      }
+     if (paramsError) return res.status(400).json({ con: false, msg: paramsError.details[0].message });
 
-      if (!authorId) {
-        return res.status(401).json({ con: false, msg: "Unauthorized" });
-      }
+     if (bodyError) return res.status(400).json({ con: false, msg: bodyError.details[0].message });
 
-      if (!content || !content.trim()) {
-        return res.status(400).json({ con: false, msg: "Content is required" });
-      }
+     const { taskId } = paramsValue;
+     const { content } = bodyValue;
+     const authorId = res.locals.user.id;
 
-      if (content.trim().length > 1000) {
-        return res.status(400).json({ con: false, msg: "Content too long" });
-      }
-
-      const newComment = await commentService.createComment({
-        taskId,
-        authorId,
-        content,
+     const newComment = await commentService.createComment({
+       taskId,
+       authorId,
+       content,
       });
 
-      return res.status(201).json({ con: true, msg: "Comment added", data: newComment });
-    } catch (error: any) {
-      if (error.message === "Task not found") {
-        return res.status(404).json({ con: false, msg: "Task not found" });
-      }
-      return res.status(500).json({ con: false, msg: error.message || "Error adding comment" });
+     return res.status(201).json({ 
+       con: true, 
+       msg: "Comment added", 
+       data: newComment 
+    });
+
+  } catch (error: any) {
+    console.error("Add Comment Error:", error);
+    
+    if (error.message === "Task not found") {
+      return res.status(404).json({ con: false, msg: "Task not found" });
     }
+    
+    return res.status(500).json({ con: false, msg: error.message || "Error adding comment" });
+  }
   },
 
   getComments: async (req: Request, res: Response) => {
@@ -52,31 +51,34 @@ export const commentController = {
     }
   },
 
-  updateComment: async (req: Request, res: Response) => {
-    try {
-      const commentId = Number(req.params.commentId);
-      const { content } = req.body;
-      const { id: authorId } = res.locals.user;
+ updateComment : async (req: Request, res: Response) => {
+  try {
 
-      if (!commentId) {
-        return res.status(400).json({ con: false, msg: "Invalid commentId" });
-      }
+    const { error: paramsError, value: paramsValue } = updateCommentValidator.params.validate(req.params);
+    
+    const { error: bodyError, value: bodyValue } = updateCommentValidator.body.validate(req.body);
 
-      if (!content) {
-        return res.status(400).json({ con: false, msg: "Content is required" });
-      }
+    if (paramsError) return res.status(400).json({ con: false, msg: paramsError.details[0].message });
 
-      const result = await commentService.updateComment(Number(commentId), authorId, content);
+    if (bodyError) return res.status(400).json({ con: false, msg: bodyError.details[0].message });
 
-      if (!result) {
-        return res.status(404).json({ con: false, msg: "Comment not found" });
-      }
+    const { commentId } = paramsValue;
+    const { content } = bodyValue;
+    const authorId = res.locals.user.id;
 
-      return res.status(200).json({ con: true, msg: "Comment updated successfully" });
-    } catch (error) {
-      return res.status(500).json({ con: false, msg: "Error updating comment" });
+    const result = await commentService.updateComment(Number(commentId), authorId, content);
+
+    if (!result) {
+      return res.status(404).json({ con: false, msg: "Comment not found or unauthorized" });
     }
-  },
+
+    return res.status(200).json({ con: true, msg: "Comment updated successfully" });
+
+  } catch (error: any) {
+    console.error("Update Comment Error:", error);
+    return res.status(500).json({ con: false, msg: error.message || "Error updating comment" });
+  }
+},
 
   deleteComment: async (req: Request, res: Response) => {
     try {

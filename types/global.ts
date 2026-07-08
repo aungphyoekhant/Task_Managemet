@@ -108,7 +108,10 @@ export type WorkspaceUserRole = {
   role: Role;
   userId: number;
 };
-
+export type WorkspaceUser = {
+  workspaceId : number,
+  userId: number
+}
 export type WorkspaceUserParams = {
   userId: number;
   workspaceId: number;

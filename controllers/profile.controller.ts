@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { profileService } from "../services/profile.service";
 import { deleteFile } from "../utils/fileHandler";
+import { upsertProfileValidator } from "../validators/profileauth";
 
 export const profileController = {
   getProfile: async (req: Request, res: Response) => {
@@ -33,18 +34,25 @@ export const profileController = {
   upsertProfile: async (req: Request, res: Response) => {
     try {
       const userId = Number(res.locals.user.id);
+      console.log(res.locals.user)
       const body = req.body || {};
 
       const existingData = await profileService.getProfile(userId);
 
       const avatarUrl = req.file ? `/uploads/${req.file.filename}` : body.avatar;
-      const { name, workspaceId, jobTitle, bio, phone } = body;
+      const { name,  jobTitle, bio, phone } = body;
 
-      if (!name) {
-        return res.status(400).json({ con: false, msg: "Name is required" });
-      }
+      const {error , value} = upsertProfileValidator.validate({
+        name : name,
+        phone : phone,
+        avatar : avatarUrl,
+        jobTitle : jobTitle,
+        bio : bio,
+        userId: userId,
+      })
 
-      const parsedWorkspaceId = workspaceId ? Number(workspaceId) : existingData?.workspaceUsers?.[0]?.workspaceId;
+      if (error) return res.status(400).json({ con: false, msg: error.details[0].message });
+
 
       const profile = await profileService.upsertProfile(userId, {
         name,
@@ -52,7 +60,7 @@ export const profileController = {
         jobTitle,
         bio,
         phone,
-        workspaceId: parsedWorkspaceId,
+        userId,
       });
 
       if (req.file && existingData?.profile?.avatar) {

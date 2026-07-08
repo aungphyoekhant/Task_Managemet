@@ -5,7 +5,7 @@ import express from "express";
 export const router = express.Router();
 
 router.get("/workspaceall", auth, searchController.searchWorkspaces);
-router.get("/:workspaceId/projects", auth, searchController.searchProjects);
-router.get("/:workspaceId/tasks", auth, searchController.searchTasks);
+router.get("/:workspaceId/projects", auth, searchController.searchProject);
 router.get("/:workspaceId/users", auth, searchController.searchUsers);
-router.get("/:workspaceId/global", auth, searchController.globalSearch);
+router.get("/:workspaceId/:projectId/task", auth, searchController.searchTasksByTitle)
+router.get("/:workspaceId/taskStatus", auth, searchController.searchTasksByStatus)

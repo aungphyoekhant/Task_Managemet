@@ -1,31 +1,40 @@
 import { Request, Response } from "express";
 import { workspaceUserService } from "../services/workspace-user.service";
 import { authService } from "../services/auth.service";
+import { getWrokspaceUserValidator } from "../validators/workspaceuserauth";
 
 export const workspaceUserController = {
   getWorkspaceUsers: async (req: Request, res: Response) => {
     try {
-      const user = res.locals.user;
+      const userId = Number(res.locals.user.id);
+      const workspaceId = Number(req.params.workspaceId);
 
-      if (!user) {
-        return res.status(401).json({ con: false, msg: "Unauthorized: No user ID found" });
+      const {error, value} = getWrokspaceUserValidator.validate({
+        userId,
+        workspaceId
+      })
+
+      console.log(value)
+
+      if(error){
+        return res.status(400).json({con : false, msg : error.details[0].message })
       }
 
-      const data = await authService.getWorkspaceUserRole({ userId: user.id, workspaceId: Number(req.params.workspaceId) });
+      const data = await authService.getWorkspaceUserRole({ userId, workspaceId });
+
+      console.log(data)
 
       if (!data) {
         return res.status(404).json({ con: false, msg: "Workspace not found" });
       }
 
-      if (data.role !== "OWNER" && data.role !== "ADMIN") {
-        return res.status(403).json({ con: false, msg: "Access denied: You don't have permission" });
-      }
+      // if (data.role !== "OWNER" && data.role !== "ADMIN") {
+      //   return res.status(403).json({ con: false, msg: "Access denied: You don't have permission" });
+      // }
 
-      const workspaceId = Number(req.params.workspaceId);
-
-      if (isNaN(workspaceId)) {
-        return res.status(400).json({ con: false, msg: "Invalid workspace ID" });
-      }
+      // if (isNaN(workspaceId)) {
+      //   return res.status(400).json({ con: false, msg: "Invalid workspace ID" });
+      // }
 
       const users = await workspaceUserService.getWorkspaceUsers(workspaceId);
 
