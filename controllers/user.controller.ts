@@ -4,21 +4,45 @@ import { authService } from "../services/auth.service";
 import jwt from "jsonwebtoken";
 import { loginValidator, registerValidator } from "../validators/userauth";
 
+
+
 export const userController = {
-  // REGISTER
-  register: async (req: Request, res: Response) => {
+ register: async (req: Request, res: Response) => {
     try {
       const result = registerValidator.validate(req.body);
-      console.log(result);
-      if (result.error) return res.status(400).json({ con: false, msg: result.error.details[0].message });
+      if (result.error) {
+        return res.status(400).json({ con: false, msg: result.error.details[0].message });
+      }
 
       const { email, password, name, token } = req.body;
+      let userData;
 
-      const newUser = await userServices.register({ email, password, name }, token);
+      console.log(`+++++++++++++++++++++++++++++++ ${token}`)
 
-      return res.status(201).json({ con: true, msg: "Account Created successfully", data: newUser });
+      if (token) {
+        userData = await userServices.inviteRegister({ email, password, name }, token);
+        
+        return res.status(201).json({ 
+          con: true, 
+          msg: "Joined workspace successfully", 
+          data: userData 
+        });
+      } else {
+        userData = await userServices.register({ email, password, name });
+        
+        return res.status(201).json({ 
+          con: true, 
+          msg: "Account created successfully", 
+          data: userData 
+        });
+      }
+
     } catch (error: any) {
-      return res.status(500).json({ con: false, msg: error.message || "Registration failed" });
+      console.error("Register Error:", error);
+      return res.status(500).json({ 
+        con: false, 
+        msg: error.message || "Registration failed" 
+      });
     }
   },
 
@@ -64,16 +88,18 @@ export const userController = {
   refreshToken: async (req: Request, res: Response) => {
     try {
       const { refreshToken } = req.body;
-      console.log(refreshToken);
+      console.log(req.body)
       if (!refreshToken) return res.status(401).json({ con: false, msg: "Refresh token required" });
 
       const payload = authService.verifyRefreshToken(refreshToken);
 
-      const newAccessToken = jwt.sign({ id: payload.id }, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "1h" });
+      const newAccessToken = jwt.sign({ id: payload.id }, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "15m" });
 
+      console.log("New Access Token :", newAccessToken)
       return res.status(200).json({ con: true, accessToken: newAccessToken });
     } catch (error: any) {
       return res.status(403).json({ con: false, msg: "Invalid or expired token" });
     }
   },
+
 };

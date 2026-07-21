@@ -1,7 +1,8 @@
-import { prisma } from "../lib/prisma"; // အကယ်၍ သို့မဟုတ်ပါတယ်
+import { prisma } from "../lib/prisma";
+import { auditService } from "./audit.service";
 
 export const projectUserService = {
-  addMember: async (projectId: number, userId: number, addedById: number, workspaceId: number) => {
+  addMember: async (workspaceId: number,projectId: number, userId: number, addedById: number, ) => {
     const userInWorkspace = await prisma.workspaceUser.findFirst({
       where: { userId, workspaceId },
     });
@@ -10,9 +11,9 @@ export const projectUserService = {
       throw new Error("User is not part of this workspace");
     }
 
-    if (userInWorkspace.role !== "MEMBER") {
-      throw new Error("Only members can be added to a project. Admins/Owners cannot be added as Project Users.");
-    }
+    // if (userInWorkspace.role !== "MEMBER") {
+    //   throw new Error("Only members can be added to a project. Admins/Owners cannot be added as Project Users.");
+    // }
 
     const isAlreadyMember = await prisma.projectUser.findFirst({
       where: { projectId, userId },
@@ -24,16 +25,31 @@ export const projectUserService = {
 
     return await prisma.projectUser.create({
       data: {
+        workspaceId,
         projectId,
         userId: userId,
         addedById: addedById,
-        workspaceId,
-        role: "MEMBER",
+
       },
     });
   },
 
-  getMembersByProject: async (projectId: number) => {
+  getMembersByProject : async (projectId: number, userId: number) => {
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { workspaceId: true }
+    });
+
+    if (!project) throw new Error("Project not found");
+
+    const memberRole = await prisma.workspaceUser.findFirst({
+      where: { userId, workspaceId: project.workspaceId },
+    });
+
+    if (!memberRole) {
+      throw new Error("Access denied: You are not part of this workspace");
+    }
+
     return await prisma.projectUser.findMany({
       where: { projectId },
       include: {
@@ -41,36 +57,56 @@ export const projectUserService = {
           select: {
             id: true,
             email: true,
-            profile: {
-              select: {
-                name: true,
-                avatar: true,
-                jobTitle: true,
-              },
-            },
+            profile: { select: { name: true, avatar: true, jobTitle: true } },
           },
         },
       },
     });
   },
 
-  removeMember: async (projectUserId: number) => {
-    return await prisma.projectUser.delete({
-      where: { id: projectUserId },
+ removeMember: async (projectUserId: number, actorUserId: number) => {
+    return await prisma.$transaction(async (tx) => {
+      const member = await tx.projectUser.findUnique({
+        where: { id: projectUserId },
+        include: { project: { select: { workspaceId: true } } }
+      });
+
+      if (!member) throw new Error("Member not found");
+
+      
+      const actorRole = await tx.workspaceUser.findFirst({
+        where: { userId: actorUserId, workspaceId: member.project.workspaceId }
+      });
+
+      if (!actorRole || (actorRole.role !== "ADMIN" && actorRole.role !== "OWNER")) {
+        throw new Error("Access denied: Only Admins/Owners can remove members");
+      }
+
+      await tx.projectUser.delete({ where: { id: projectUserId } });
+
+      await auditService.ActivityLog({
+        workspaceId: member.project.workspaceId,
+        userId: actorUserId,
+        action: "REMOVE_MEMBER",
+        entityType: "PROJECT_USER",
+        entityId: projectUserId,
+      });
+
+      return { success: true };
     });
   },
 
-  getProjectMemberById : async (projectUserId: number) => {
+  getProjectMemberById: async (projectUserId: number) => {
     return await prisma.projectUser.findUnique({
       where: { id: projectUserId },
       include: { project: true },
-  })
+    })
   },
 
-  getProjectUserByUserId : async (projectId: number, userId: number) => {
+  getProjectUserByUserId: async (projectId: number, userId: number) => {
     return await prisma.projectUser.findFirst({
       where: { projectId: projectId, userId: userId },
-  })
+    })
   }
 
 };

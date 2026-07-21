@@ -1,0 +1,3 @@
+=> ssh-keygen -t ed25519 -C "aungphyokhant.official@gmail.com"
+=>  ls -l ~/.ssh (place where generated ssh exist)
+

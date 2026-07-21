@@ -5,4 +5,6 @@ import { checkWorkspaceRole } from "../middlewares/roleMiddleware";
 
 export const router = express.Router();
 
-router.post("/invited", auth, checkWorkspaceRole(["OWNER", "ADMIN"]), workspaceInvitedController.inviteUser);
+router.post("/invited",auth,  checkWorkspaceRole(["OWNER"]), workspaceInvitedController.inviteUser);
+
+router.get("/workspaces/:workspaceId/invitations", auth, checkWorkspaceRole(["OWNER"]), workspaceInvitedController.getInvitations);

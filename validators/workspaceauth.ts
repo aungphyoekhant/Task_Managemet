@@ -12,10 +12,7 @@ export const modifyWorkspaceValidator = Joi.object({
     name : Joi.string().min(4).max(30).required(),
     workspaceId : Joi.number().integer().positive().required(),
     userId: Joi.number().integer().positive().required(),
-    logo: Joi.string()
-    .pattern(/\.(jpg|jpeg|png)$/i)
-    .optional()
-    .required()
+    logo: Joi.string().allow(null, "").optional()
 })
 
 export const dropWorkspaceValidator = Joi.object({

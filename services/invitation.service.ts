@@ -43,5 +43,26 @@ export const invitationService = {
     ])
 
     return {member,workspace}
+  },
+
+  getInvitations: async (workspaceId: number) => {
+    return await prisma.invitation.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: 'desc' },
+    });
+  },
+
+  getInviteById: async (inviteId: number) => {
+    return await prisma.invitation.findUnique({
+      where: { id: inviteId },
+    });
+  },
+  
+  updateInvitationStatus: async (invitationId: number, status: 'ACCEPTED' | 'REJECTED') => {
+    return await prisma.invitation.update({
+      where: { id: invitationId },
+      data: { status },
+    });
   }
+
 };

@@ -13,9 +13,8 @@ export const upsertProfileValidator = Joi.object({
         .optional(),
 
     avatar: Joi.string()
-       .pattern(/\.(jpg|jpeg|png)$/i)
-       .optional()
-       .required(),
+       .allow(null, "")
+       .optional(),
 
     jobTitle: Joi.string()
         .max(50)

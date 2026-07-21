@@ -58,7 +58,7 @@ export const authService = {
 
   // Generate Tokens
   generateTokens: (user: AccessPayload) => {
-    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "1h" });
+    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "15m" });
 
     // Refresh Token
     const refreshData: RefreshPayload = { id: user.id };

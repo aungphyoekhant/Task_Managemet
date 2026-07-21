@@ -1,3 +1,4 @@
+import { ProjectStatus } from "../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 import { auditService } from "./audit.service";
 
@@ -5,12 +6,13 @@ export const projectService = {
   createProject: async (projectData: {
     projectName: string;
     description: string;
-    startDate: Date;
-    endDate: Date;
+    status : ProjectStatus,
+    startDate: string | Date;
+    endDate: string | Date;
     workspaceId: number;
     createBy: number;
   }) => {
-    const { projectName, description, startDate, endDate, workspaceId, createBy } = projectData;
+    const { projectName, description,status, startDate, endDate, workspaceId, createBy } = projectData;
 
     const workspaceUser = await prisma.workspaceUser.findFirst({
       where: { workspaceId: workspaceId, userId: createBy },
@@ -25,6 +27,7 @@ export const projectService = {
         data: {
           name: projectName,
           description: description,
+          status: (status ? status.toUpperCase() : "PENDING") as ProjectStatus,
           startDate: startDate,
           endDate: endDate,
           workspaceId: workspaceId,
@@ -80,18 +83,22 @@ export const projectService = {
       },
     });
   },
-
-  updateProject: async (projectId: number, data: { name: string; description: string; startDate: Date; endDate: Date }) => {
-    return await prisma.$transaction(async (tx) => {
-      const updatedProject = await tx.project.update({
-        where: { id: projectId },
-        data: {
-          name: data.name,
-          description: data.description,
-          startDate: new Date(data.startDate),
-          endDate: new Date(data.endDate),
-        },
-      });
+  
+  updateProject: async (projectId: number, workspaceId: number, data:{projectName: string; description: string; status: string; startDate: Date; endDate: Date }) => {
+  return await prisma.$transaction(async (tx) => {
+    const updatedProject = await tx.project.update({
+      where: { 
+        id: projectId,
+        
+      },
+      data: {
+        name: data.projectName,
+        description: data.description,
+        status: (data.status ? data.status.toUpperCase() : "PENDING") as ProjectStatus,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+      },
+    });
 
       const notification = await tx.notification.create({
         data: {

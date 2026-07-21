@@ -3,7 +3,10 @@ import { workspaceService } from "../services/workspace.service";
 import { deleteFile } from "../utils/fileHandler";
 import { createWorkspaceValidator, dropWorkspaceValidator, getWorkspaceValidator, modifyWorkspaceValidator } from "../validators/workspaceauth";
 export const workspaceController = {
- getAllWorkspace: async (req: Request, res: Response) => {
+  getAllWorkspace: async (req: Request, res: Response) => {
+
+    console.log(res.locals.user)
+
     const userId = Number(res.locals.user.id);
 
 
@@ -16,13 +19,13 @@ export const workspaceController = {
       return res.status(200).json({
         con: true,
         msg: "Workspaces fetched successfully",
-        result : workspaces
+        result: workspaces
       });
-      
+
 
     } catch (error) {
-      console.error("Get All Workspaces Error:", error);
-      return res.status(500).json({ con: false, msg: "Internal Server Error" });
+      console.log("Get All Workspaces Error:", error);
+      return res.status(500).json({ con: false, msg: error });
     }
   },
 
@@ -31,14 +34,14 @@ export const workspaceController = {
     const userId = Number(res.locals.user.id);
     const workspaceId = Number(req.params.id);
 
-    const {error, value} = getWorkspaceValidator.validate({
+    const { error, value } = getWorkspaceValidator.validate({
       userId,
       workspaceId
     })
 
     console.log(value)
-    if(error) {
-      return res.status(400).json({con : false,msg : error.details[0].message })
+    if (error) {
+      return res.status(400).json({ con: false, msg: error.details[0].message })
     }
 
 
@@ -59,7 +62,7 @@ export const workspaceController = {
 
   getAllWorkspaceByUserId: async (req: Request, res: Response) => {
     try {
-      
+
       const userId = Number(res.locals.user.id);
 
       if (!userId) {
@@ -70,7 +73,7 @@ export const workspaceController = {
 
       return res.status(200).json({
         con: true,
-        msg: "Workspaces fetched successfully",
+        msg: "Workspaces All fetched successfully",
         data: workspaces,
       });
     } catch (error: any) {
@@ -90,9 +93,9 @@ export const workspaceController = {
       logo: logoUrl,
       userId,
     });
-    
+
     if (error) {
-      if (req.file) deleteFile(req.file.path); 
+      if (req.file) deleteFile(req.file.path);
       return res.status(400).json({ con: false, msg: error.details[0].message });
     }
 
@@ -106,7 +109,7 @@ export const workspaceController = {
       res.status(201).json({
         con: true,
         msg: "Workspace created successfully",
-        result : workspace,
+        result: workspace,
       });
     } catch (error) {
       console.error("Create Workspace Error:", error);
@@ -114,18 +117,18 @@ export const workspaceController = {
     }
   },
 
- modifyWorkspace: async (req: Request, res: Response) => {
+  modifyWorkspace: async (req: Request, res: Response) => {
     const { name } = req.body;
     const userId = Number(res.locals.user.id);
     const workspaceId = Number(req.params.id);
-    const file = req.file; 
-    const logoUrl = file ? `/uploads/${file.filename}` : "";
+    const file = req.file;
+    const logoUrl = file ? `/uploads/${file.filename}` : req.body.logo === "" ? "" : undefined;
 
     const { error, value } = modifyWorkspaceValidator.validate({
-      name :name,
+      name: name,
       workspaceId: workspaceId,
       userId: userId,
-      logo: logoUrl
+      ...(logoUrl !== undefined && { logo: logoUrl })
     });
     console.log(value)
 
@@ -137,7 +140,7 @@ export const workspaceController = {
     try {
       // 2. Fetch existing workspace to handle old file deletion
       const existingWorkspace = await workspaceService.getWorkspace(userId, workspaceId);
-      
+
       if (!existingWorkspace) {
         if (file) deleteFile(file.path);
         return res.status(404).json({ con: false, msg: "Workspace not found" });
@@ -145,26 +148,26 @@ export const workspaceController = {
 
       // 3. Prepare update data
       const updateData: any = { name: value.name };
-      if (file) {
+      if (value.logo !== undefined) {
         updateData.logo = value.logo;
       }
 
       //  Update in Database (Use userId, not user.id)
       const workspace = await workspaceService.modifyWorkspace(userId, workspaceId, updateData);
 
-      //  Delete old logo if a new one was uploaded
-      if (file && existingWorkspace.logo) {
-        deleteFile(existingWorkspace.logo); 
+      //  Delete old logo if a new one was uploaded OR if logo is explicitly removed
+      if (value.logo !== undefined && existingWorkspace.logo && existingWorkspace.logo !== value.logo) {
+        deleteFile(existingWorkspace.logo);
       }
 
       res.status(200).json({
         con: true,
         msg: "Workspace updated successfully",
-        result : workspace,
+        result: workspace,
       });
     } catch (error) {
       console.error("Modify Workspace Error:", error);
-      if (file) deleteFile(file.path); 
+      if (file) deleteFile(file.path);
       res.status(500).json({ con: false, msg: "Error updating workspace" });
     }
   },
@@ -173,18 +176,18 @@ export const workspaceController = {
     const userId = Number(res.locals.user.id)
     const workspaceId = Number(req.params.id);
 
-    const {error, value} = dropWorkspaceValidator.validate({
-      userId : userId,
-      workspaceId : workspaceId
+    const { error, value } = dropWorkspaceValidator.validate({
+      userId: userId,
+      workspaceId: workspaceId
     })
-    
-    if(error){
-      return res.status(400).json({con : false, msg : error.details[0].message })
+
+    if (error) {
+      return res.status(400).json({ con: false, msg: error.details[0].message })
     }
 
 
     try {
-      
+
       const workspace = await workspaceService.getWorkspace(userId, workspaceId);
 
       if (!workspace) {

@@ -53,9 +53,18 @@ export const workspaceService = {
       where: {
         userId: userId,
       },
-      include: {
-        workspace: true,
-      },
+     include: {
+       workspace: {
+           include: {
+               _count: {
+                   select: {
+                        projects: true,
+                         tasks: true,
+         }
+      }
+    }
+  }
+},
     });
   },
 
@@ -89,6 +98,7 @@ export const workspaceService = {
       throw error;
     }
   },
+  
   modifyWorkspace: async (userId: number, workspaceId: number, data: { name: string; logo: string }) => {
     return await prisma.$transaction(async (tx) => {
       const workspace = await tx.workspace.update({

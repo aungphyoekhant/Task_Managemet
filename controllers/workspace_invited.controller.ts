@@ -11,25 +11,23 @@ export const workspaceInvitedController = {
       const userId = Number(res.locals.user.id);
       const targetRole = role?.toUpperCase();
 
-      const {error, value}= workspaceInviteValidator.validate({
+      const { error } = workspaceInviteValidator.validate({
         workspaceId,
         email,
         role,
-      })
+      });
 
-      if(error){
-        return res.status(400).json({con : false, msg : error.details[0].message})
+      if (error) {
+        return res.status(400).json({ con: false, msg: error.details[0].message });
       }
 
       const data = await invitationService.getWorkspaceData(Number(workspaceId), userId);
 
-      
       if (!data || !data.workspace || !data.member) {
         return res.status(404).json({ con: false, msg: "Workspace or Membership not found" });
       }
 
-      const { member, workspace } = data;
-
+      const { member } = data;
       const isOwner = member.role === "OWNER";
       const isAdmin = member.role === "ADMIN";
 
@@ -53,8 +51,32 @@ export const workspaceInvitedController = {
         data: result,
       });
     } catch (error: any) {
+     
       console.error("INVITE_ERROR:", error);
-      return res.status(500).json({ con: false, msg: error.message || "Internal server error" });
+      return res.status(400).json({ con: false, msg: error.message || "Internal server error" });
     }
   },
+
+  getInvitations : async (req: Request, res: Response) => {
+  try {
+    const { workspaceId } = req.params;
+    
+    const userId = Number(res.locals.user.id);
+    const data = await invitationService.getWorkspaceData(Number(workspaceId), userId);
+
+    if (!data || !data.member) {
+      return res.status(403).json({ con: false, msg: "Unauthorized access" });
+    }
+
+    const invitations = await invitationService.getInvitations(Number(workspaceId));
+
+    return res.status(200).json({
+      con: true,
+      msg: "Invitations fetched successfully",
+      data: invitations,
+    });
+    } catch (error: any) {
+      return res.status(500).json({ con: false, msg: error.message });
+   }
+  }
 };

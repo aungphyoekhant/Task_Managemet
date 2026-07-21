@@ -2,38 +2,51 @@ import express from "express";
 import path from "path";
 import cors from "cors";
 import "dotenv/config";
+import fs from "fs"
+import { fileURLToPath } from 'url';
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors({
+    origin: "http://localhost:5173", 
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  next();
+});
+
+app.use((req, res, next) => {
+  if (req.url.startsWith('/uploads/')) {
+    const filePath = path.join(process.cwd(), req.url);
+    console.log("Checking file at:", filePath);
+    console.log("Does file exist?", fs.existsSync(filePath));
+  }
+  next();
+});
+
+
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 import rootRouter from "./route";
 app.use(rootRouter);
-
-//------------------------------------------------------------------------------
 
 app.get("/", (req, res) => {
   res.json({ msg: `SERVER IS RUNNING ON PORT ${PORT}` });
 });
 
 app.use((req, res) => {
-  res.status(404).json({
-    msg: "Not found route",
-  });
+  res.status(404).json({ msg: "Not found route" });
 });
-
-app.use((req, res, next) => {
-  console.log(`[REQUEST] ${req.method} ${req.url}`);
-  next();
-});
-//---------------------------------------------------------------------------
-
-const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.clear();
   console.log(`Server is running at Port ${PORT}...`);
 });

@@ -1,30 +1,25 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { prisma } from "../lib/prisma.js";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ msg: "Token required" });
+    return res.status(401).json({ msg: "Token required Aung Phyo Khnat " });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string) as { id: number; role: string; email: string };
 
-    const workspaceUser = await prisma.workspaceUser.findFirst({
-      where: { userId: decoded.id },
-      orderBy: { id: "asc" },
-    });
+    const decoded = jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET as string
+    ) as { id: number; email: string };
 
     res.locals.user = {
       id: decoded.id,
       email: decoded.email,
-      role: workspaceUser?.role,
     };
-
-    console.log(res.locals.user);
 
     next();
   } catch (err: any) {

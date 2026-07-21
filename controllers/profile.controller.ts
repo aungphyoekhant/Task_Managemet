@@ -39,31 +39,32 @@ export const profileController = {
 
       const existingData = await profileService.getProfile(userId);
 
-      const avatarUrl = req.file ? `/uploads/${req.file.filename}` : body.avatar;
+      const avatarUrl = req.file ? `/uploads/${req.file.filename}` : body.avatar === "" ? "" : undefined;
       const { name,  jobTitle, bio, phone } = body;
 
       const {error , value} = upsertProfileValidator.validate({
         name : name,
         phone : phone,
-        avatar : avatarUrl,
+        ...(avatarUrl !== undefined && { avatar: avatarUrl }),
         jobTitle : jobTitle,
         bio : bio,
         userId: userId,
       })
 
-      if (error) return res.status(400).json({ con: false, msg: error.details[0].message });
+      if (error) {
+        if (req.file) deleteFile(req.file.path);
+        return res.status(400).json({ con: false, msg: error.details[0].message });
+      }
 
+      const updateData: any = { name, jobTitle, bio, phone, userId };
+      if (value.avatar !== undefined) {
+        updateData.avatar = value.avatar;
+      }
 
-      const profile = await profileService.upsertProfile(userId, {
-        name,
-        avatar: avatarUrl,
-        jobTitle,
-        bio,
-        phone,
-        userId,
-      });
+      const profile = await profileService.upsertProfile(userId, updateData);
 
-      if (req.file && existingData?.profile?.avatar) {
+      // Delete old avatar if a new one was uploaded OR explicitly removed
+      if (value.avatar !== undefined && existingData?.profile?.avatar && existingData.profile.avatar !== value.avatar) {
         deleteFile(existingData.profile.avatar);
       }
 

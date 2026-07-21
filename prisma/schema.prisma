@@ -128,7 +128,6 @@ model Project {
   startDate   DateTime?
   endDate     DateTime?
   createdAt   DateTime      @default(now())
-
   workspace    Workspace     @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   creator      User          @relation("CreatedProjects", fields: [createBy], references: [id])
   projectUsers ProjectUser[]
@@ -150,21 +149,37 @@ model ProjectUser {
   @@index([projectId])
 }
 
-
 model Task {
   id          Int        @id @default(autoincrement())
   workspaceId Int
   projectId   Int
-  assignedTo  Int
   title       String
   description String?
   priority    Priority   @default(MEDIUM)
   status      TaskStatus @default(IN_PROGRESS)
   dueDate     DateTime?
   createdAt   DateTime   @default(now())
-  workspace Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  comments  Comment[]
+  updatedAt   DateTime   @updatedAt
+
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  taskUsers   TaskUser[] 
+}
+
+model TaskUser {
+  id          Int      @id @default(autoincrement())
+  workspaceId Int
+  projectId   Int
+  userId      Int
+  taskId      Int
+  role        Role     @default(MEMBER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId]) 
 }
 
 model Comment {
@@ -195,7 +210,7 @@ model UserNoti{
   notificationId Int
   isRead          Boolean      @default(false)
   user           User         @relation(fields: [userId], references: [id])
-  notification   Notification @relation(fields: [notificationId], references: [id])
+  notification   Notification @relation(fields: [notificationId], references: [id],onDelete: Cascade)
 }
 
 model ActivityLog {

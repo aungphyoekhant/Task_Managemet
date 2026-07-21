@@ -1,43 +1,69 @@
 import { Request, Response } from "express";
 import { projectUserService } from "../services/project_user.service";
-import { prisma } from "../lib/prisma";
 import { authService } from "../services/auth.service";
 import { addProjectMemberValidator, removeMemberValidator } from "../validators/projectuser-auth";
 
 export const projectUserController = {
-  addMember: async (req: Request, res: Response) => {
-    try {
-      const {error, value } = addProjectMemberValidator.validate(req.body)
 
-      if(error){
-        return res.status(400).json({con : false, msg : error.details[0].message})
+ addMember: async (req : Request, res : Response) => {
+    console.log(res.locals.user);
+    try {
+      // 1. Validate request body with Joi
+      const { error, value } = addProjectMemberValidator.validate(req.body);
+
+      console.log("Project User is : ", value);
+
+      if (error) {
+        return res.status(400).json({ con: false, msg: error.details[0].message });
       }
 
-
-      const userId = Number(res.locals.user.id);
-      if (!userId) {
+      const addedById = Number(res.locals.user.id);
+      if (!addedById) {
         return res.status(401).json({ con: false, msg: "Unauthorized: No user ID found" });
       }
 
-      const { projectId, assignedTo, workspaceId } = req.body;
+      // **အရေးကြီးချက်**: req.body အစား Joi စစ်ပြီးသား `value` မှ တန်ဖိုးများကို ယူသုံးပါ
+      const { projectId, userId, workspaceId } = value;
 
+      // 2. Action လုပ်သူ၏ Workspace Role ကို စစ်ဆေးခြင်း
+      const actionUserRoleData = await authService.getWorkspaceUserRole({ 
+        userId: addedById, 
+        workspaceId: Number(workspaceId) 
+      });
 
-      const data = await authService.getWorkspaceUserRole({ userId,workspaceId : Number(workspaceId)});
+      console.log("Action User Role:", actionUserRoleData?.role);
 
-      if (data?.role !== "OWNER" && data?.role !== "ADMIN") {
+      if (actionUserRoleData?.role !== "OWNER" && actionUserRoleData?.role !== "ADMIN") {
         return res.status(403).json({ con: false, msg: "Access denied: Only Owners and Admins can add members" });
       }
 
+      // 3. (Optional လုံခြုံရေး) OWNER က အခြား Owner များကို Assign လုပ်ခွင့်မပေးလိုလျှင် စစ်ဆေးရန်
+      const targetUserRoleData = await authService.getWorkspaceUserRole({ 
+        userId: Number(userId), 
+        workspaceId: Number(workspaceId) 
+      });
+
+      if (targetUserRoleData?.role === "OWNER") {
+        return res.status(400).json({ con: false, msg: "Cannot assign another owner to the project" });
+      }
+
+      // 4. Project Member အသစ် ထည့်သွင်းခြင်း
       const newMember = await projectUserService.addMember(
-        Number(projectId),
         Number(workspaceId),
-        Number(assignedTo),
-        userId);
+        Number(projectId),
+        Number(userId),
+        addedById,
+      );
 
-      return res.status(201).json({ con: true, msg: "Member added successfully", data: newMember });
+      console.log("New Member Added:", newMember);
 
-      
-    } catch (error: any) {
+      return res.status(201).json({ 
+        con: true, 
+        msg: "Member added successfully", 
+        data: newMember 
+      });
+
+    } catch (error : any) {
       console.error("Add Member Error:", error);
       return res.status(400).json({ con: false, msg: error.message || "Failed to add member" });
     }
@@ -46,8 +72,9 @@ export const projectUserController = {
   getAllProjectMembers: async (req: Request, res: Response) => {
     try {
       const { projectId } = req.params;
+      const userId = Number(res.locals.user.id)
 
-      const members = await projectUserService.getMembersByProject(Number(projectId));
+      const members = await projectUserService.getMembersByProject(Number(projectId), userId);
 
       if (!members) return res.status(404).json({ con: false, msg: "Members not found" });
 
@@ -63,38 +90,44 @@ export const projectUserController = {
 
   removeMember: async (req: Request, res: Response) => {
     try {
+      const { error } = removeMemberValidator.validate(req.params);
 
-      const {error, value} = removeMemberValidator.validate(req.params)
-
-      if(error) {
-        return res.status(400).json({con : false, msg : error.details[0].message})
+      if (error) {
+        return res.status(400).json({ con: false, msg: error.details[0].message });
       }
 
       const { projectUserId } = req.params;
-      const requesterId = res.locals.user.id;
+      const actorUserId = Number(res.locals.user.id);
 
-      const member = await projectUserService.getProjectMemberById(Number(projectUserId));
-
-
-      if (!member) return res.status(404).json({ con: false, msg: "Member not found" });
-
-     const requester = await projectUserService.getProjectUserByUserId(member.projectId, requesterId);
-
-      const isOwner = member.project.createBy === requesterId;
-      const isAdmin = requester?.role === "ADMIN";
-
-      if (!isOwner && !isAdmin) {
-        return res.status(403).json({ con: false, msg: "Access Denied: Only Owner or Admin can delete members" });
+      if (!actorUserId) {
+        return res.status(401).json({ con: false, msg: "Unauthorized: No user ID found" });
       }
 
-      await projectUserService.removeMember(Number(projectUserId));
+      console.log(`[Controller] Removing projectUserId: ${projectUserId} by actorUserId: ${actorUserId}`);
 
-      return res.status(200).json({ con: true, msg: "Member removed successfully" });
+    
+      await projectUserService.removeMember(Number(projectUserId), actorUserId);
 
+      return res.status(200).json({ 
+        con: true, 
+        msg: "Member removed successfully" 
+      });
 
     } catch (error: any) {
-      console.log("Project User Controller : ", error)
-      return res.status(500).json({ con: false, msg: error.message });
+      console.error("Remove Member Error:", error);
+      
+     
+      if (error.message.includes("Access denied")) {
+        return res.status(403).json({ con: false, msg: error.message });
+      }
+      if (error.message.includes("Member not found")) {
+        return res.status(404).json({ con: false, msg: error.message });
+      }
+
+      return res.status(500).json({ 
+        con: false, 
+        msg: error.message || "Failed to remove member" 
+      });
     }
   },
 };

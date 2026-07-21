@@ -35,56 +35,60 @@ export const taskService = {
     return !!workspaceUser;
   },
 
-  createTask: async (data: CreateTaskPayload) => {
-    const member = await prisma.projectUser.findFirst({
-      where: {
-        userId: data.assignedTo,
+   createTask: async (data: CreateTaskPayload, userId: number) => {
+    const workspaceMember = await prisma.workspaceUser.findFirst({
+    where: { userId: userId, workspaceId: data.workspaceId },
+    });
+
+    if (!workspaceMember) {
+      throw new Error("You are not a member of this workspace.");
+    }
+
+    const project = await prisma.project.findFirst({
+      where: { id: data.projectId, workspaceId: data.workspaceId },
+    });
+
+    if (!project) {
+     throw new Error("Project not found in this workspace.");
+    }
+
+  
+  const isWorkspaceAdmin = ["ADMIN", "OWNER"].includes(workspaceMember.role);
+
+  if (!isWorkspaceAdmin) {
+    const projectMember = await prisma.projectUser.findFirst({
+      where: { userId: userId, projectId: data.projectId },
+    });
+
+    if (!projectMember) {
+      throw new Error("You do not have access to this project.");
+    }
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    const newTask = await tx.task.create({
+      data: {
+        workspaceId: data.workspaceId,
         projectId: data.projectId,
+        title: data.title,
+        description: data.description || null,
+        priority: data.priority || "MEDIUM",
+        status: data.status || "TODO",
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
       },
     });
 
-    if (!member) {
-      throw new Error("Member not found");
-    }
-
-    return await prisma.$transaction(async (tx) => {
-      const newTask = await tx.task.create({
-        data: {
-          workspaceId: data.workspaceId,
-          projectId: data.projectId,
-          assignedTo: data.assignedTo,
-          title: data.title,
-          description: data.description || null,
-          priority: data.priority || "MEDIUM",
-          status: data.status || "TODO",
-          dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        },
-        include: {
-          comments: true,
-        },
-      });
-
-      // Notification ဖန်တီးခြင်း
-      await tx.notification.create({
-        data: {
-          workspaceId: data.workspaceId,
-          userId: data.assignedTo,
-          message: `You have been assigned to: ${data.title}`,
-        },
-      });
-
-      // Activity Log ဖန်တီးခြင်း
-      await auditService.ActivityLog({
-        workspaceId: data.workspaceId,
-        userId: data.assignedTo,
-        action: "CREATE_TASK",
-        entityType: "TASK",
-        entityId: newTask.id,
-      });
-
-      return newTask;
+    await auditService.ActivityLog({
+      workspaceId: data.workspaceId,
+      userId: userId,
+      action: "CREATE_TASK",
+      entityType: "TASK",
+      entityId: newTask.id,
     });
-  },
+
+    return newTask;
+  });
+  } ,
 
   getTaskById: async (taskId: number) => {
     return await prisma.task.findFirst({
@@ -118,27 +122,14 @@ export const taskService = {
     return { data, nextCursor, hasNextPage };
   },
 
-  updateTask: async (taskId: number, data: any, userId: number) => {
+ updateTask: async (taskId: number, data: any, userId: number) => {
     return await prisma.$transaction(async (tx) => {
+     
       const updatedTask = await tx.task.update({
         where: { id: taskId },
         data: data,
       });
 
-      const notification = await tx.notification.create({
-        data: {
-          workspaceId: updatedTask.workspaceId,
-          userId: updatedTask.assignedTo,
-          message: `Task "${updatedTask.title}" has been updated`,
-        },
-      });
-
-      await tx.userNoti.create({
-        data: {
-          userId: updatedTask.assignedTo,
-          notificationId: notification.id,
-        },
-      });
 
       await auditService.ActivityLog({
         workspaceId: updatedTask.workspaceId,
@@ -160,6 +151,14 @@ export const taskService = {
       });
 
       if (!task) throw new Error("Task not found");
+
+      const member = await tx.workspaceUser.findFirst({
+          where: { userId, workspaceId: task.workspaceId }
+        });
+
+     if (!member || (member.role !== "ADMIN" && member.role !== "OWNER")) {
+         throw new Error("Access denied: Only Admins/Owners can delete tasks");
+      }
 
       await tx.task.delete({ where: { id: taskId } });
 
@@ -188,37 +187,49 @@ export const taskService = {
     });
   },
 
-  updateAssignedTask: async (taskId: number, data: { status?: any; priority?: any }, workspaceId: number) => {
+ updateAssignedTask: async (taskId: number, data: { status?: any; priority?: any }, currentUserId: number, workspaceId: number) => {
     return await prisma.$transaction(async (tx) => {
       const updatedTask = await tx.task.update({
         where: { id: taskId },
         data: data,
-      });
+        include: {
+          taskUsers: true, 
+        }, 
+      }); 
 
-      const notification = await tx.notification.create({
-        data: {
-          workspaceId: updatedTask.workspaceId,
-          userId: updatedTask.assignedTo,
-          message: `Task "${updatedTask.title}" status has been updated to ${updatedTask.status}`,
-        },
-      });
+      for (const tu of updatedTask.taskUsers) {
+        const notification = await tx.notification.create({
+          data: {
+            workspaceId: workspaceId,
+            userId: tu.userId,
+            message: `Task "${updatedTask.title}" status has been updated to ${updatedTask.status}`,
+          },
+        });
 
-      await tx.userNoti.create({
-        data: {
-          userId: updatedTask.assignedTo,
-          notificationId: notification.id,
-        },
-      });
+        await tx.userNoti.create({
+          data: {
+            userId: tu.userId,
+            notificationId: notification.id,
+          },
+        });
+      }
 
       await auditService.ActivityLog({
-        workspaceId: updatedTask.workspaceId,
-        userId: updatedTask.assignedTo,
-        action: "DELETE_TASK",
+        workspaceId: workspaceId,
+        userId: currentUserId, 
+        action: "UPDATE_TASK",
         entityType: "TASK",
         entityId: taskId,
       });
 
       return updatedTask;
     });
+  },
+
+  isUserAssignedToTask: async (taskId: number, userId: number) => {
+    const taskUser = await prisma.taskUser.findFirst({
+      where: { taskId: taskId, userId: userId },
+    });
+    return !!taskUser; 
   },
 };

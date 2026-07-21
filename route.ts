@@ -17,6 +17,7 @@ import { router as commentRouter } from "./routes/comment.route";
 import { router as activityRouter } from "./routes/activity.route";
 import { router as workspaceUserRouter } from "./routes/workspace-user.route";
 import { router as notificationRouter } from "./routes/notification.route";
+import { router as taskUserRouter } from "./routes/task_user.route";
 
 router.use(notificationRouter);
 router.use(workspaceUserRouter);
@@ -27,13 +28,14 @@ router.use(workspaceRouter);
 router.use(profileRouter);
 router.use(workspaceInvitedRouter);
 router.use(invitationRouter);
-router.use("/workspaces", projectRouter);
-
-router.use("/workspaces", projectUserRouter);
+router.use(projectRouter);
+router.use(projectUserRouter);
 router.use(updateRoleRouter);
 router.use(memberRouter);
 router.use(taskRouter);
+router.use(taskUserRouter);
 router.use(commentRouter);
 router.use(activityRouter);
+
 
 export default router;

@@ -1,24 +1,22 @@
 import { Request, Response } from "express";
 import { projectService } from "../services/project.service";
 import { authService } from "../services/auth.service";
-import { number } from "joi";
 import { createProjectValidator, updateProjectValidator } from "../validators/projectauth";
+import { ProjectStatus } from "../generated/prisma/enums";
 
 export const projectController = {
-  // 1. Get All Projects
   getAllProjects: async (req: Request, res: Response) => {
     try {
       const { workspaceId } = req.params;
-      if (!workspaceId) return res.status(400).json({ con: false, msg: "workspaceId is required in body" });
+      if (!workspaceId) return res.status(400).json({ con: false, msg: "workspaceId is required in parmas" });
 
       const projects = await projectService.getAllProjects(Number(workspaceId));
       return res.status(200).json({ con: true, msg: "Projects Fetched", data: projects });
     } catch (error) {
-      return res.status(500).json({ con: false, msg: "Error fetching projects" });
+      return res.status(500).json({ con: false, msg: "Error fetching projects", error });
     }
   },
 
-  // 2. Get Project By ID
   getProjectById: async (req: Request, res: Response) => {
     try {
       const projectId = Number(req.params.projectId);
@@ -34,15 +32,17 @@ export const projectController = {
     }
   },
 
-  createProject: async (req: Request , res: Response) => {
+  createProject: async (req: Request, res: Response) => {
 
-    const {error , value} = createProjectValidator.validate(req.body)
+    const { error, value } = createProjectValidator.validate(req.body)
 
-    if(error){
-      return res.status(400).json({con : false, msg : error.details[0].message})
+    if (error) {
+      return res.status(400).json({ con: false, msg: error.details[0].message })
     }
 
-    const { projectName, description, startDate, endDate, workspaceId } = req.body;
+    const { projectName, description,status, startDate, endDate, workspaceId } = req.body;
+
+    console.log(req.body)
 
     const userId = res.locals.user.id;
 
@@ -62,9 +62,10 @@ export const projectController = {
       const project = await projectService.createProject({
         projectName,
         description: description || null,
+        status: (status || "PENDING") as ProjectStatus,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        workspaceId : Number(workspaceId),
+        workspaceId: Number(workspaceId),
         createBy: userId,
       });
 
@@ -78,32 +79,32 @@ export const projectController = {
       return res.status(500).json({ con: false, msg: "Internal Server Error" });
     }
   },
-  // 4. Update Project
+
   updateProject: async (req: Request, res: Response) => {
     try {
+      const { error: paramsError, value: paramsValue } = updateProjectValidator.params.validate(req.params);
+      const { error: bodyError, value: bodyValue } = updateProjectValidator.body.validate(req.body);
 
-      const {error : paramsError, value : paramsValue} = updateProjectValidator.params.validate(req.params)
+      if (paramsError) return res.status(400).json({ con: false, msg: paramsError.details[0].message });
+      if (bodyError) return res.status(400).json({ con: false, msg: bodyError.details[0].message });
 
-      const {error : bodyError, value: bodyValue} = updateProjectValidator.body.validate(req.body)
+      const { projectId, workspaceId } = paramsValue;
+      const userId = res.locals.user.id;
 
-      if(paramsError){
-        return res.status(400).json({con : false, msg : paramsError.details[0].message})
+      const member = await authService.getWorkspaceUserRole({ userId, workspaceId: Number(workspaceId) });
+
+      if (!member) return res.status(404).json({ con: false, msg: "Not a member of this workspace" });
+      if (member.role !== "OWNER" && member.role !== "ADMIN") {
+        return res.status(403).json({ con: false, msg: "Access denied" });
       }
 
-      if(bodyError){
-        return res.status(400).json({con : false, msg : bodyError.details[0].message})
-      }
+      const updatedProject = await projectService.updateProject(Number(projectId),workspaceId, bodyValue);
 
-      const {projectId, workspaceId} = paramsValue;
-      
-      
-
-      const updatedProject = await projectService.updateProject(Number(projectId), bodyValue);
 
       return res.status(200).json({ con: true, msg: "Project updated", data: updatedProject });
 
-      
     } catch (error) {
+      console.error("DEBUG: Update Project Error =>", error); // Error ကို log ထုတ်ပါ
       return res.status(500).json({ con: false, msg: "Error updating project" });
     }
   },

@@ -50,27 +50,32 @@ export type AddMemberPayload = {
   role: Role;
 };
 
-// 3. Project Management
+
 export type CreateProjectPayload = {
   workspaceId: number;
   createBy: number;
   name: string;
   description?: string;
   status?: ProjectStatus;
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string | Date; 
+  endDate?: string | Date;
 };
 
 // 4. Task Management
 export type CreateTaskPayload = {
   workspaceId: number;
   projectId: number;
-  assignedTo: number;
   title: string;
   description?: string;
   priority?: Priority;
   status?: TaskStatus;
   dueDate?: Date;
+};
+export type AssignTaskPayload = {
+  taskId: number;
+  userIdToAssign: number; // assignedTo အစား ဤသို့ပြောင်းပါ
+  workspaceId: number;
+  projectId: number;
 };
 
 // 5. Invitation

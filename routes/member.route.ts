@@ -5,4 +5,4 @@ import { checkWorkspaceRole } from "../middlewares/roleMiddleware";
 
 export const router = express.Router();
 
-router.delete("/:workspaceId/members/:userId", auth, checkWorkspaceRole(["OWNER", "ADMIN"]), memberController.deleteMember);
+router.delete("/workspaces/:workspaceId/members/:userId", auth, checkWorkspaceRole(["OWNER", "ADMIN"]), memberController.deleteMember);

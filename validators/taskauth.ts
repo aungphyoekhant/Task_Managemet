@@ -4,7 +4,6 @@ export const createTaskValidator = Joi.object({
     workspaceId: Joi.number().integer().positive().required(),
     userId : Joi.number().integer().positive().required(),
     projectId : Joi.number().integer().positive().required(),
-    assignedTo: Joi.number().integer().positive().required(),
     title: Joi.string().min(4).max(30).required(),
     description: Joi.string().allow(null, '').optional(),
     priority: Joi.string().valid("LOW","MEDIUM","HIGH").uppercase().optional(),
@@ -26,7 +25,6 @@ export const updateTaskValidator = {
     priority: Joi.string().valid("LOW", "MEDIUM", "HIGH").optional(),
     status: Joi.string().valid("TODO", "IN_PROGRESS", "DONE").optional(),
     dueDate: Joi.date().iso().optional(),
-    assignedTo: Joi.number().optional(),
   }).unknown(true),
 };
 

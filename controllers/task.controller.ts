@@ -1,49 +1,41 @@
 import { Request, Response } from "express";
 import { taskService } from "../services/task.service";
-import { createTaskValidator,updateTaskValidator} from "../validators/taskauth";
-import { stat } from "node:fs";
+import { createTaskValidator, updateTaskValidator } from "../validators/taskauth";
 import { updateAssignedTaskValidator } from "../validators/taskauth";
 
 export const taskController = {
   createTask: async (req: Request, res: Response) => {
     try {
-       const { projectId, assignedTo, title, description, priority, status, dueDate, workspaceId } = req.body;
-      const userId = Number(res.locals.user.id);
-
-      console.log(req.body)
-
-
-      const {error, value} = createTaskValidator.validate({
-        workspaceId,
-        userId,
+      const {
         projectId,
-        assignedTo,
         title,
         description,
         priority,
         status,
         dueDate,
-      })
+        workspaceId
+      } = req.body;
+
+      const userId = Number(res.locals.user.id);
+
+      const { error, value } = createTaskValidator.validate({
+        workspaceId,
+        userId,
+        projectId,
+        title,
+        description,
+        priority,
+        status,
+        dueDate,
+      });
 
       console.log(value)
 
-
-      if(error){
-        return res.status(400).json({con : false, msg : error.details[0].message})
+      if (error) {
+        return res.status(400).json({ con: false, msg: error.details[0].message });
       }
 
-
-
-      // if (!userId) {
-      //   return res.status(401).json({ con: false, msg: "Unauthorized" });
-      // }
-
-      // if (!projectId || !assignedTo || !title || !workspaceId) {
-      //   return res.status(400).json({ con: false, msg: "Missing required fields" });
-      // }
-
       const pId = Number(projectId);
-      const targetUserId = Number(assignedTo);
       const wId = Number(workspaceId);
 
       const canManage = await taskService.canManageProjectTasks(pId, userId);
@@ -54,20 +46,17 @@ export const taskController = {
       const newTask = await taskService.createTask({
         workspaceId: wId,
         projectId: pId,
-        assignedTo: targetUserId,
         title,
         description,
         priority: priority || "MEDIUM",
         status: status || "TODO",
         dueDate: dueDate ? new Date(dueDate) : undefined,
-      });
+      }, userId);
 
       return res.status(201).json({ con: true, msg: "Task created successfully", data: newTask });
 
-
     } catch (error: any) {
       console.error("Create Task Error:", error);
-
       return res.status(500).json({ con: false, msg: error.message || "Internal Server Error" });
     }
   },
@@ -99,15 +88,15 @@ export const taskController = {
   updateTask: async (req: Request, res: Response) => {
     try {
 
-      const {error : paramsError} = updateTaskValidator.params.validate(req.params)
+      const { error: paramsError } = updateTaskValidator.params.validate(req.params)
 
-      const {error : bodyError} = updateTaskValidator.body.validate(req.body)
+      const { error: bodyError } = updateTaskValidator.body.validate(req.body)
 
-      if(paramsError){
-        return res.status(400).json({con : false, msg : paramsError.details[0].message})
+      if (paramsError) {
+        return res.status(400).json({ con: false, msg: paramsError.details[0].message })
       }
-      if(bodyError){
-        return res.status(400).json({con : false, msg : bodyError.details[0].message})
+      if (bodyError) {
+        return res.status(400).json({ con: false, msg: bodyError.details[0].message })
       }
 
       const taskId = Number(req.params.taskId);
@@ -134,21 +123,18 @@ export const taskController = {
     }
   },
 
-  updateAssignedTask: async (req: Request, res: Response) => {
-    try { 
+ updateAssignedTask: async (req: Request, res: Response) => {
+    try {
+      const { error: paramsError } = updateAssignedTaskValidator.params.validate(req.params);
+      const { error: bodyError, value } = updateAssignedTaskValidator.body.validate(req.body);
 
-      const {error: paramsError} = updateAssignedTaskValidator.params.validate(req.params)
-
-      const {error : bodyError, value} = updateAssignedTaskValidator.body.validate(req.body)
-
-      if(paramsError){
-        return res.status(400).json({con : false, msg : paramsError.details[0].message})
+      if (paramsError) {
+        return res.status(400).json({ con: false, msg: paramsError.details[0].message });
       }
 
-      if(bodyError){
-        return res.status(400).json({con : false, msg : bodyError.details[0].message})
+      if (bodyError) {
+        return res.status(400).json({ con: false, msg: bodyError.details[0].message });
       }
-
 
       const taskId = Number(req.params.taskId);
       const userId = res.locals.user.id;
@@ -156,11 +142,20 @@ export const taskController = {
       const task = await taskService.getTaskById(taskId);
       if (!task) return res.status(404).json({ con: false, msg: "Task not found" });
 
-      if (task.assignedTo !== userId) {
+      // ✅ Assign လုပ်ထားခြင်း ရှိမဖြစ်ကို isUserAssignedToTask ဖြင့် စစ်ဆေးခြင်း
+      const isAssigned = await taskService.isUserAssignedToTask(taskId, userId);
+
+      if (!isAssigned) {
         return res.status(403).json({ con: false, msg: "Not assigned to this task" });
       }
 
-      const updated = await taskService.updateAssignedTask(taskId, value, userId);
+      // ✅ တကယ် update လုပ်မည့် service ကို arguments ၄ ခုဖြင့် တိကျစွာ ခေါ်သုံးခြင်း
+      const updated = await taskService.updateAssignedTask(
+        taskId, 
+        value, 
+        userId, 
+        Number(task.workspaceId)
+      );
 
       return res.status(200).json({ con: true, data: updated });
     } catch (error: any) {
@@ -171,7 +166,7 @@ export const taskController = {
   deleteTask: async (req: Request, res: Response) => {
     try {
       const taskId = Number(req.params.taskId);
-      const userId = res.locals.user.id; // User ID ကို ရယူပါ
+      const userId = res.locals.user.id; 
 
       const task = await taskService.getTaskById(taskId);
       if (!task || !(await taskService.canManageProjectTasks(task.projectId, userId))) {
@@ -181,7 +176,7 @@ export const taskController = {
       // userId 
       await taskService.deleteTask(taskId, userId);
 
-      return res.status(200).json({ con: true, msg: "Deleted" });
+      return res.status(200).json({ con: true, msg: "Deleted Success" });
     } catch (error: any) {
       return res.status(500).json({ con: false, msg: error.message });
     }

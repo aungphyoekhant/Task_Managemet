@@ -6,7 +6,13 @@ import { InvitationTokenPayload } from "../types/global";
 
 export const invitationController = {
   acceptInvitation: async (req: Request, res: Response) => {
-    const { token } = req.query;
+    const { token } = req.body;
+
+    console.log("-------------",token)
+
+    const decoded = jwt.decode(token); 
+
+console.log("Decoded Token Data:", decoded);
 
     if (!token || typeof token !== "string") {
       return res.status(400).json({ con: false, msg: "Token is required" });
@@ -40,4 +46,26 @@ export const invitationController = {
       return res.status(401).json({ con: false, msg: "Invalid or expired token" });
     }
   },
+
+  rejectInvitation : async (req: Request, res: Response) => {
+  const { token } = req.body;
+
+  if (!token) return res.status(400).json({ con: false, msg: "Token is required" });
+
+  try {
+    const secret = process.env.INVITATION_SECRET!;
+    const decoded = jwt.verify(token, secret) as { invitationId: number };
+
+    const invitation = await invitationService.getInvitationById(decoded.invitationId);
+    if (!invitation || invitation.status !== "PENDING") {
+      return res.status(400).json({ con: false, msg: "Invalid or already processed invitation" });
+    }
+
+    await invitationService.updateInvitationStatus(decoded.invitationId, 'REJECTED');
+
+    return res.json({ con: true, msg: "Invitation rejected successfully" });
+  } catch (error) {
+    return res.status(401).json({ con: false, msg: "Invalid or expired token" });
+  }
+  }
 };

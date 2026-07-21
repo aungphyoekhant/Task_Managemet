@@ -35,12 +35,10 @@ export const searchService = {
   },
   
 
-
-  searchUsers: async (workspaceId: number,userId : number, q: string) => {
+ searchUsers: async (workspaceId: number, q: string) => {
     return await prisma.workspaceUser.findMany({
       where: {
-        userId,
-        workspaceId,
+        workspaceId: Number(workspaceId),
         user: {
           OR: [
             { profile: { name: { contains: q, mode: "insensitive" } } },
