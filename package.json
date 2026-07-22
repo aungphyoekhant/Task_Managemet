@@ -13,7 +13,7 @@
     "remove": "npx prisma migrate reset --force",
     "migrate": "npx prisma migrate dev --name init",
     "genetate": "npx prisma generate",
-    "build": "tsc"
+    "build": "tsup src/index.ts --format esm"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -43,6 +43,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.20.0",
     "prisma": "^7.8.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }

@@ -57,9 +57,9 @@ export const searchController = {
       const q = req.query.q as string || ""; 
       
 
+
       const users = await searchService.searchUsers(
         Number(workspaceId), 
-       
         q,
       );
 
