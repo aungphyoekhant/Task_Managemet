@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { projectService } from "../services/project.service";
 import { authService } from "../services/auth.service";
 import { createProjectValidator, updateProjectValidator } from "../validators/projectauth";
-import { ProjectStatus } from "../generated/prisma/enums";
+import { ProjectStatus } from "../../generated/prisma/enums";
 
 export const projectController = {
   getAllProjects: async (req: Request, res: Response) => {

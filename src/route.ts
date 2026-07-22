@@ -1,7 +1,7 @@
 import expresss from "express";
 const router = expresss.Router();
 
-import { router as profileRouter } from "./routes/profile.route";
+import { router as profileRouter } from "../src/routes/profile.route";
 import { router as workspaceRouter } from "./routes/workspace.route";
 import { router as workspaceInvitedRouter } from "./routes/workspace_invited.route";
 import { router as userRouter } from "./routes/user.route";

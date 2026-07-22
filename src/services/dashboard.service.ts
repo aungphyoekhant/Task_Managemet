@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { TaskStatus } from "../generated/prisma/client";
+import { TaskStatus } from "../../generated/prisma/client";
 
 import { WorkspaceUserRole } from "../types/global";
 export const dashboardService = {

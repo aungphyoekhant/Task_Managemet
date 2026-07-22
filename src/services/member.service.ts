@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { Role } from "../generated/prisma/client";
+import { Role } from "../../generated/prisma/client";
 
 export const memberService = {
   getMemberRole: async (workspaceId: number, userId: number) => {

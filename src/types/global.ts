@@ -1,4 +1,4 @@
-import { Role, ProjectStatus, TaskStatus, Priority, InvitationStatus } from "../generated/prisma/client";
+import { Role, ProjectStatus, TaskStatus, Priority, InvitationStatus } from "../../generated/prisma/client";
 // 1. Auth Payloads
 export type RegisterPayload = {
   email: string;

@@ -56,11 +56,10 @@ export const searchController = {
       
       const q = req.query.q as string || ""; 
       
-      const userId = Number(res.locals.user.id);
 
       const users = await searchService.searchUsers(
         Number(workspaceId), 
-        userId,
+       
         q,
       );
 

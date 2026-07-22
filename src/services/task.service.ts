@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib/prisma"
 import { CreateTaskPayload } from "../types/global";
 import { auditService } from "./audit.service";
 

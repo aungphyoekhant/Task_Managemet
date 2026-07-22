@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { Role } from "../generated/prisma/client";
+import { Role } from "../../generated/prisma/client";
 
 export const invitationService = {
   processAcceptInvitation: async (userData: { userId: number; workspaceId: number; role: string }, invitationData: { id: number; status: any }) => {

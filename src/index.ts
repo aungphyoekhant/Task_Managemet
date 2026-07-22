@@ -4,7 +4,7 @@ import cors from "cors";
 import "dotenv/config";
 import fs from "fs"
 import { fileURLToPath } from 'url';
-
+import rootRouter from "./route";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-import rootRouter from "./route";
+
 app.use(rootRouter);
 
 app.get("/", (req, res) => {

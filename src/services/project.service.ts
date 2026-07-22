@@ -1,4 +1,4 @@
-import { ProjectStatus } from "../generated/prisma/enums";
+import { ProjectStatus } from "../../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 import { auditService } from "./audit.service";
 

@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma"// သင့် project တွင်သုံးနေသော prisma instance path ကို ထည့်ပါ
+import { prisma } from "../lib/prisma"
 import { auditService } from "./audit.service"; // လိုအပ်ပါက audit service
 
 export const taskUserService = {
