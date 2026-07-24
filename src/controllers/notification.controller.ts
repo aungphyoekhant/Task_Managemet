@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { notificationService } from "../services/notification.service";
+import { notificationService } from "../services/notification.service.js";
 export const notificationController = {
   markNotificationAsRead: async (req: Request, res: Response) => {
     const userId = Number(res.locals.user.id);

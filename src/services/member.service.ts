@@ -1,5 +1,5 @@
-import { prisma } from "../lib/prisma";
-import { Role } from "../../generated/prisma/client";
+import { prisma } from "../lib/prisma.js";
+import { Role } from "../../generated/prisma/client.js";
 
 export const memberService = {
   getMemberRole: async (workspaceId: number, userId: number) => {
@@ -9,7 +9,6 @@ export const memberService = {
     });
   },
 
-  // Workspace ပိုင်ရှင်ကို ရှာရန်
   getWorkspaceOwner: async (workspaceId: number) => {
     return await prisma.workspace.findUnique({
       where: { id: workspaceId },
@@ -17,7 +16,6 @@ export const memberService = {
     });
   },
 
-  // Member ကို ဖျက်ရန်
   deleteMember: async (workspaceId: number, userId: number) => {
     return await prisma.workspaceUser.deleteMany({
       where: { workspaceId, userId },

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { projectUserService } from "../services/project_user.service";
-import { authService } from "../services/auth.service";
-import { addProjectMemberValidator, removeMemberValidator } from "../validators/projectuser-auth";
+import { projectUserService } from "../services/project_user.service.js";
+import { authService } from "../services/auth.service.js";
+import { addProjectMemberValidator, removeMemberValidator } from "../validators/projectuser-auth.js";
 
 export const projectUserController = {
 

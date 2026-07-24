@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { workspaceUserService } from "../services/workspace-user.service";
-import { authService } from "../services/auth.service";
-import { getWrokspaceUserValidator } from "../validators/workspaceuserauth";
+import { workspaceUserService } from "../services/workspace-user.service.js";
+import { authService } from "../services/auth.service.js";
+import { getWrokspaceUserValidator } from "../validators/workspaceuserauth.js";
 
 export const workspaceUserController = {
   getWorkspaceUsers: async (req: Request, res: Response) => {

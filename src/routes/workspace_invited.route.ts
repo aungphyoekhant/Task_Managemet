@@ -1,7 +1,7 @@
 import express from "express";
-import { auth } from "../middlewares/authMiddleware";
-import { workspaceInvitedController } from "../controllers/workspace_invited.controller";
-import { checkWorkspaceRole } from "../middlewares/roleMiddleware";
+import { auth } from "../middlewares/authMiddleware.js";
+import { workspaceInvitedController } from "../controllers/workspace_invited.controller.js";
+import { checkWorkspaceRole } from "../middlewares/roleMiddleware.js";
 
 export const router = express.Router();
 

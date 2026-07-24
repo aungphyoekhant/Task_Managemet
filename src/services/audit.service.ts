@@ -1,10 +1,8 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib/prisma.js";
+
 
 export const auditService = {
-  /**
-   * Activity log အသစ်တစ်ခု ဖန်တီးရန်
-   */
-  ActivityLog: async (data: { workspaceId: number; userId: number; action: string; entityType: string; entityId: number }) => {
+  ActivityLog: async (data: {workspaceId : number, userId: number; action: string; entityType: string; entityId: number }) => {
     try {
       return await prisma.activityLog.create({
         data: {

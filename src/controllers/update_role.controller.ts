@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { updateRoleServices } from "../services/update_role.service";
-import { authService } from "../services/auth.service";
-import { updateRoleValidator } from "../validators/updaterole";
+import { updateRoleServices } from "../services/update_role.service.js";
+import { authService } from "../services/auth.service.js";
+import { updateRoleValidator } from "../validators/updaterole.js";
 
 export const updateRoleController = {
   updateRole: async (req: Request, res: Response) => {

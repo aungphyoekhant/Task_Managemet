@@ -1,5 +1,5 @@
-import { prisma } from "../lib/prisma";
-import { TaskStatus } from "../../generated/prisma/enums";
+import { prisma } from "../lib/prisma.js";
+import { TaskStatus } from "../../generated/prisma/enums.js";
 
 export const searchService = {
 

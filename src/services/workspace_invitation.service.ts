@@ -1,7 +1,7 @@
-import { prisma } from "../lib/prisma"
+import { prisma } from "../lib/prisma.js"
 import jwt from "jsonwebtoken";
-import { transporter } from "../lib/nodemailer";
-import { Role } from "../../generated/prisma/client";
+import { transporter } from "../lib/nodemailer.js";
+import { Role } from "../../generated/prisma/client.js";
 
 export const workspaceInvitationService = {
   inviteUser: async (userId: number, workspaceId: number, email: string, role: string) => {

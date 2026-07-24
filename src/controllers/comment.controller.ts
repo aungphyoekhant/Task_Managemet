@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { commentService } from "../services/comment.service";
-import { addCommentValidator,updateCommentValidator } from "../validators/comment";
+import { commentService } from "../services/comment.service.js";
+import { addCommentValidator, updateCommentValidator } from "../validators/comment.js";
 
 export const commentController = {
   addComment : async (req: Request, res: Response) => {

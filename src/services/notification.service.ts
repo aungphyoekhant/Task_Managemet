@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib/prisma.js";
 export const notificationService = {
   markRead: async (userId: number, notificationId: number) => {
     const updated = await prisma.notification.updateMany({

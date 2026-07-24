@@ -1,5 +1,5 @@
-import { prisma } from "../lib/prisma"
-import { auditService } from "./audit.service"; // လိုအပ်ပါက audit service
+import { prisma } from "../lib/prisma.js"
+import { auditService } from "./audit.service.js"; // လိုအပ်ပါက audit service
 
 export const taskUserService = {
   assignUserToTask: async (payload: {

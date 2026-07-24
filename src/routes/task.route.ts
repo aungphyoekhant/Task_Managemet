@@ -1,7 +1,7 @@
-import express from "express"; // သင့် express ကို အသုံးပြုခြင်း
-import { taskController } from "../controllers/task.controller";
-import { auth } from "../middlewares/authMiddleware";
-import { checkWorkspaceRole } from "../middlewares/roleMiddleware";
+import express from "express"; 
+import { taskController } from "../controllers/task.controller.js";
+import { auth } from "../middlewares/authMiddleware.js";
+import { checkWorkspaceRole } from "../middlewares/roleMiddleware.js";
 
 export const router = express.Router();
 

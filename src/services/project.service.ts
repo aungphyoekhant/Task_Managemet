@@ -1,6 +1,6 @@
-import { ProjectStatus } from "../../generated/prisma/enums";
-import { prisma } from "../lib/prisma";
-import { auditService } from "./audit.service";
+import { ProjectStatus } from "../../generated/prisma/enums.js";
+import { prisma } from "../lib/prisma.js";
+import { auditService } from "./audit.service.js";
 
 export const projectService = {
   createProject: async (projectData: {
@@ -62,18 +62,37 @@ export const projectService = {
     });
   },
 
-  getProjectById: async (projectId: number) => {
-    return await prisma.project.findUnique({
+ 
+  getProjectById: async (projectId: number, workspaceId: number) => {
+    const project = await prisma.project.findUnique({
       where: { id: projectId },
       include: {
         tasks: true,
         projectUsers: true,
       },
     });
+
+    if (!project) return null;
+
+    const workspaceUsers = await prisma.workspaceUser.findMany({
+      where: {
+        workspaceId: workspaceId,
+      },
+      select: {
+        role: true,
+        user: true, 
+      },
+    });
+
+    return {
+      ...project,
+      workspaceUsers,
+    };
   },
 
   getAllProjects: async (workspaceId: number) => {
-    return await prisma.project.findMany({
+    
+    const projects = await prisma.project.findMany({
       where: {
         workspaceId: workspaceId,
       },
@@ -82,23 +101,55 @@ export const projectService = {
         projectUsers: true,
       },
     });
-  },
-  
-  updateProject: async (projectId: number, workspaceId: number, data:{projectName: string; description: string; status: string; startDate: Date; endDate: Date }) => {
-  return await prisma.$transaction(async (tx) => {
-    const updatedProject = await tx.project.update({
-      where: { 
-        id: projectId,
-        
+
+    const workspaceUsers = await prisma.workspaceUser.findMany({
+      where: {
+        workspaceId: workspaceId,
       },
-      data: {
-        name: data.projectName,
-        description: data.description,
-        status: (data.status ? data.status.toUpperCase() : "PENDING") as ProjectStatus,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
+      select: {
+        role: true,
       },
     });
+
+    return {
+      projects,
+      workspaceUsers,
+    };
+  },
+  
+ updateProject: async (
+    projectId: number, 
+    workspaceId: number, 
+    data: { projectName: string; description: string; status: string; startDate: Date; endDate: Date }
+  ) => {
+    return await prisma.$transaction(async (tx) => {
+      
+      const updatedProject = await tx.project.update({
+        where: { 
+          id: projectId,
+        },
+        data: {
+          name: data.projectName,
+          description: data.description,
+          status: (data.status ? data.status.toUpperCase() : "PENDING") as ProjectStatus,
+          startDate: new Date(data.startDate),
+          endDate: new Date(data.endDate),
+        },
+        include: {
+          tasks: true,
+          projectUsers: true,
+        },
+      });
+
+      const workspaceUsers = await tx.workspaceUser.findMany({
+        where: {
+          workspaceId: updatedProject.workspaceId,
+        },
+        select: {
+          role: true,
+          userId: true,
+        },
+      });
 
       const notification = await tx.notification.create({
         data: {
@@ -123,7 +174,10 @@ export const projectService = {
         entityId: projectId,
       });
 
-      return updatedProject;
+      return {
+        ...updatedProject,
+        workspaceUsers,
+      };
     });
   },
 

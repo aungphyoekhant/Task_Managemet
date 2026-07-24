@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { projectService } from "../services/project.service";
-import { authService } from "../services/auth.service";
-import { createProjectValidator, updateProjectValidator } from "../validators/projectauth";
-import { ProjectStatus } from "../../generated/prisma/enums";
+import { projectService } from "../services/project.service.js";
+import { authService } from "../services/auth.service.js";
+import { createProjectValidator, updateProjectValidator } from "../validators/projectauth.js";
+import { ProjectStatus } from "../../generated/prisma/enums.js";
 
 export const projectController = {
   getAllProjects: async (req: Request, res: Response) => {
@@ -11,24 +11,33 @@ export const projectController = {
       if (!workspaceId) return res.status(400).json({ con: false, msg: "workspaceId is required in parmas" });
 
       const projects = await projectService.getAllProjects(Number(workspaceId));
+      console.log(projects)
+
       return res.status(200).json({ con: true, msg: "Projects Fetched", data: projects });
     } catch (error) {
       return res.status(500).json({ con: false, msg: "Error fetching projects", error });
     }
   },
 
-  getProjectById: async (req: Request, res: Response) => {
+ getProjectById: async (req: Request, res: Response) => {
     try {
       const projectId = Number(req.params.projectId);
+      const workspaceId = Number(req.params.workspaceId); 
 
-      const project = await projectService.getProjectById(projectId);
+      console.log("Fetching project - ID:", projectId, "WorkspaceID:", workspaceId);
 
-      if (!project) return res.status(404).json({ con: false, msg: "Project not found" });
+      const project = await projectService.getProjectById(projectId, workspaceId);
+
+      if (!project) {
+        return res.status(404).json({ con: false, msg: "Project not found" });
+      }
 
       return res.status(200).json({ con: true, msg: "Project Fetched", data: project });
 
-    } catch (error) {
-      return res.status(500).json({ con: false, msg: "Error fetching project" });
+    } catch (error: any) {
+      
+      console.error("GET PROJECT ERROR:", error.message || error);
+      return res.status(500).json({ con: false, msg: error.message || "Error fetching project" });
     }
   },
 

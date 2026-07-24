@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { profileService } from "../services/profile.service";
-import { deleteFile } from "../utils/fileHandler";
-import { upsertProfileValidator } from "../validators/profileauth";
+import { profileService } from "../services/profile.service.js";
+import { deleteFile } from "../utils/fileHandler.js";
+import { upsertProfileValidator } from "../validators/profileauth.js";
 
 export const profileController = {
   getProfile: async (req: Request, res: Response) => {

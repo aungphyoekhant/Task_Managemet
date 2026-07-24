@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { memberService } from "../services/member.service";
-import { Role } from "../../generated/prisma/client";
+import { memberService } from "../services/member.service.js";
+import { Role } from "../../generated/prisma/client.js";
 
 export const memberController = {
   deleteMember: async (req: Request, res: Response) => {

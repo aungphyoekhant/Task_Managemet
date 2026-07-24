@@ -1,51 +1,15 @@
-import { prisma } from "../lib/prisma";
-export const activityService = {
-  getActivityLogs: async (workspaceId: number) => {
-    return await prisma.activityLog.findMany({
-      where: {
-        workspaceId: workspaceId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            profile: {
-              select: { name: true, avatar: true },
-            },
-          },
-        },
-      },
-    });
-  },
+import { prisma } from "../lib/prisma.js";
 
-  ActivityLog: async (
-    tx: any,
-    {
-      workspaceId,
-      userId,
-      action,
-      entityType,
-      entityId,
-    }: {
-      workspaceId: number;
-      userId: number;
-      action: string;
-      entityType: string;
-      entityId: number;
+export const activityService = {
+  getActivityLogsByUserId : async (userId: number) => {
+  return await prisma.activityLog.findMany({
+    where: {
+      userId: userId, 
     },
-  ) => {
-    return await tx.activityLog.create({
-      data: {
-        workspaceId,
-        userId,
-        action,
-        entityType,
-        entityId,
-      },
-    });
-  },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+},
+
 };

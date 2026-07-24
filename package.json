@@ -12,8 +12,9 @@
     "seed": "tsx seed/main.ts",
     "remove": "npx prisma migrate reset --force",
     "migrate": "npx prisma migrate dev --name init",
-    "genetate": "npx prisma generate",
-    "build": "tsup src/index.ts --format esm"
+    "generate": "npx prisma generate",
+    "build" : "tsc",
+    "build-tsup": "tsup src/index.ts --format esm"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

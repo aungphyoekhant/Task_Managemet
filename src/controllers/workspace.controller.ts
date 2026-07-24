@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { workspaceService } from "../services/workspace.service";
-import { deleteFile } from "../utils/fileHandler";
-import { createWorkspaceValidator, dropWorkspaceValidator, getWorkspaceValidator, modifyWorkspaceValidator } from "../validators/workspaceauth";
+import { workspaceService } from "../services/workspace.service.js";
+import { deleteFile } from "../utils/fileHandler.js";
+import { createWorkspaceValidator, dropWorkspaceValidator, getWorkspaceValidator, modifyWorkspaceValidator } from "../validators/workspaceauth.js";
 export const workspaceController = {
   getAllWorkspace: async (req: Request, res: Response) => {
 

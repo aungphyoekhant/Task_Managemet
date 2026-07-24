@@ -1,5 +1,5 @@
-import { searchController } from "../controllers/search.controller";
-import { auth } from "../middlewares/authMiddleware";
+import { searchController } from "../controllers/search.controller.js";
+import { auth } from "../middlewares/authMiddleware.js";
 import express from "express";
 
 export const router = express.Router();

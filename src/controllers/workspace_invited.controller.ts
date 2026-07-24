@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { workspaceInvitationService } from "../services/workspace_invitation.service";
-import { invitationService } from "../services/invitation.service";
-import { workspaceInviteValidator } from "../validators/workspaceInvite-auth";
+import { workspaceInvitationService } from "../services/workspace_invitation.service.js";
+import { invitationService } from "../services/invitation.service.js";
+import { workspaceInviteValidator } from "../validators/workspaceInvite-auth.js";
 
 
 export const workspaceInvitedController = {

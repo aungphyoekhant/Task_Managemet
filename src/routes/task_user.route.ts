@@ -1,8 +1,7 @@
 import express from "express";
-import { auth } from "../middlewares/authMiddleware";
-import { updateRoleController } from "../controllers/update_role.controller"; 
-import { checkWorkspaceRole } from "../middlewares/roleMiddleware";
-import { taskUserController } from "../controllers/task_user.controller";
+import { auth } from "../middlewares/authMiddleware.js";
+import { checkWorkspaceRole } from "../middlewares/roleMiddleware.js";
+import { taskUserController } from "../controllers/task_user.controller.js";
 
 export const router = express.Router();
 

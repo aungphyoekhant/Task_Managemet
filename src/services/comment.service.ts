@@ -1,5 +1,5 @@
-import { prisma } from "../lib/prisma";
-import { auditService } from "./audit.service";
+import { prisma } from "../lib/prisma.js";
+import { auditService } from "./audit.service.js";
 
 type CommentType = {
   taskId: number;

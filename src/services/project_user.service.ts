@@ -1,8 +1,9 @@
-import { prisma } from "../lib/prisma";
-import { auditService } from "./audit.service";
+import { prisma } from "../lib/prisma.js";
+import { auditService } from "./audit.service.js";
+import { Role } from "../../generated/prisma/enums.js";
 
 export const projectUserService = {
-  addMember: async (workspaceId: number,projectId: number, userId: number, addedById: number, ) => {
+  addMember: async (workspaceId: number,projectId: number, userId: number, addedById: number, role? : Role ) => {
     const userInWorkspace = await prisma.workspaceUser.findFirst({
       where: { userId, workspaceId },
     });
@@ -29,7 +30,7 @@ export const projectUserService = {
         projectId,
         userId: userId,
         addedById: addedById,
-
+        role : role || "MEMBER"
       },
     });
   },
@@ -57,7 +58,7 @@ export const projectUserService = {
           select: {
             id: true,
             email: true,
-            profile: { select: { name: true, avatar: true, jobTitle: true } },
+            profile: { select: { name: true, avatar: true } },
           },
         },
       },

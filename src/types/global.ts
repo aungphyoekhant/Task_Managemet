@@ -1,5 +1,4 @@
-import { Role, ProjectStatus, TaskStatus, Priority, InvitationStatus } from "../../generated/prisma/client";
-// 1. Auth Payloads
+import { Role, ProjectStatus, TaskStatus, Priority, InvitationStatus } from "../../generated/prisma/client.js";
 export type RegisterPayload = {
   email: string;
   password: string;

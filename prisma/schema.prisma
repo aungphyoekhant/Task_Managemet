@@ -90,7 +90,6 @@ model Workspace {
   tasks          Task[]
   invitations    Invitation[]
   notifications  Notification[]
-  activityLogs   ActivityLog[]
   projectUsers   ProjectUser[]
 }
 
@@ -215,12 +214,10 @@ model UserNoti{
 
 model ActivityLog {
   id          Int       @id @default(autoincrement())
-  workspaceId Int
   userId      Int
   action      String
   entityType  String
   entityId    Int
   createdAt   DateTime  @default(now())
-  workspace   Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id])
 }

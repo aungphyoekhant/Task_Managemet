@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { searchService } from "../services/search.service";
-import { prisma } from "../lib/prisma";
+import { searchService } from "../services/search.service.js";
+import { prisma } from "../lib/prisma.js";
 
 export const searchController = {
   // Project Search

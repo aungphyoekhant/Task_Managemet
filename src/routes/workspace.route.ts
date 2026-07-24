@@ -1,9 +1,9 @@
 import express from "express";
-import { auth } from "../middlewares/authMiddleware";
-import { workspaceController } from "../controllers/workspace.controller";
-import { upload } from "../middlewares/upload";
+import { auth } from "../middlewares/authMiddleware.js";
+import { workspaceController } from "../controllers/workspace.controller.js";
+import { upload } from "../middlewares/upload.js";
 export const router = express.Router();
-import { checkWorkspaceRole } from "../middlewares/roleMiddleware";
+import { checkWorkspaceRole } from "../middlewares/roleMiddleware.js";
 
 router.get("/allworkspacebyuserid", auth, workspaceController.getAllWorkspaceByUserId);
 

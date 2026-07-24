@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { dashboardService } from "../services/dashboard.service";
-import { authService } from "../services/auth.service";
-import { Role } from "../../generated/prisma/client";
+import { dashboardService } from "../services/dashboard.service.js";
+import { authService } from "../services/auth.service.js";
+import { Role } from "../../generated/prisma/client.js";
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {

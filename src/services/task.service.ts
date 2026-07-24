@@ -1,6 +1,6 @@
-import { prisma } from "../lib/prisma"
-import { CreateTaskPayload } from "../types/global";
-import { auditService } from "./audit.service";
+import { prisma } from "../lib/prisma.js"
+import { CreateTaskPayload } from "../types/global.js";
+import { auditService } from "./audit.service.js";
 
 export const taskService = {
   canManageProjectTasks: async (projectId: number, userId: number) => {

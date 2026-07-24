@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { userNotiService } from "../services/user-noti.service";
+import { userNotiService } from "../services/user-noti.service.js";
 
 export const userNotiController = {
   // Get

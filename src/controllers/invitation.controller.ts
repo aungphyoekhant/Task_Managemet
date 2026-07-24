@@ -1,8 +1,8 @@
 // controllers/invitation.controller.ts
 import { Request, Response } from "express";
-import { invitationService } from "../services/invitation.service";
+import { invitationService } from "../services/invitation.service.js";
 import jwt from "jsonwebtoken";
-import { InvitationTokenPayload } from "../types/global";
+import { InvitationTokenPayload } from "../types/global.js";
 
 export const invitationController = {
   acceptInvitation: async (req: Request, res: Response) => {

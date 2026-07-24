@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { userServices } from "../services/user.service";
-import { authService } from "../services/auth.service";
+import { userServices } from "../services/user.service.js";
+import { authService } from "../services/auth.service.js";
 import jwt from "jsonwebtoken";
-import { loginValidator, registerValidator } from "../validators/userauth";
+import { loginValidator, registerValidator } from "../validators/userauth.js";
 
 
 

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { taskUserService } from "../services/task_user.service";
+import { taskUserService } from "../services/task_user.service.js";
 
 export const taskUserController = {
   // 1. Task သို့ Member Assign လုပ်ရန် Controller

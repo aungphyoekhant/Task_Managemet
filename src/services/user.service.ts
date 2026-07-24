@@ -1,8 +1,8 @@
-import { prisma } from "../lib/prisma"
+import { prisma } from "../lib/prisma.js"
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { RegisterPayload } from "../types/global";
-import { Role } from "../../generated/prisma/client";
+import { RegisterPayload } from "../types/global.js";
+import { Role } from "../../generated/prisma/client.js";
 
 const handleInvitation = async (tx: any, userId: number, token: string) => {
   const secret = process.env.INVITATION_SECRET as string;

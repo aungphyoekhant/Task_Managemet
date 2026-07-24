@@ -1,7 +1,7 @@
-import { prisma } from "../lib/prisma";
-import { TaskStatus } from "../../generated/prisma/client";
+import { prisma } from "../lib/prisma.js";
+import { TaskStatus } from "../../generated/prisma/client.js";
 
-import { WorkspaceUserRole } from "../types/global";
+import { WorkspaceUserRole } from "../types/global.js";
 export const dashboardService = {
   getDashboardStats: async ({ userId, workspaceId, role }: WorkspaceUserRole) => {
     const isMember = role === "MEMBER";

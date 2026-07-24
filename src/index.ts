@@ -4,7 +4,7 @@ import cors from "cors";
 import "dotenv/config";
 import fs from "fs"
 import { fileURLToPath } from 'url';
-import rootRouter from "./route";
+import rootRouter from "./route.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
 

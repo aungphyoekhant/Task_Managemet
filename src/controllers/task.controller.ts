@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { taskService } from "../services/task.service";
-import { createTaskValidator, updateTaskValidator } from "../validators/taskauth";
-import { updateAssignedTaskValidator } from "../validators/taskauth";
+import { taskService } from "../services/task.service.js";
+import { createTaskValidator, updateTaskValidator } from "../validators/taskauth.js";
+import { updateAssignedTaskValidator } from "../validators/taskauth.js";
 
 export const taskController = {
   createTask: async (req: Request, res: Response) => {
