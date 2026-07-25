@@ -61,6 +61,8 @@ model User {
   activityLogs   ActivityLog[]
   invitations    Invitation[]  @relation("InvitedBy")
   invitedTo      Invitation[]  @relation("InvitedTo")
+  comments       Comment[]
+  taskUsers      TaskUser[]
 }
 
 model Profile {
@@ -91,6 +93,7 @@ model Workspace {
   invitations    Invitation[]
   notifications  Notification[]
   projectUsers   ProjectUser[]
+
 }
 
 model Invitation {
@@ -177,6 +180,7 @@ model TaskUser {
   updatedAt   DateTime @updatedAt
 
   task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, taskId]) 
 }
@@ -188,7 +192,8 @@ model Comment {
   authorId    Int
   content     String
   createdAt   DateTime @default(now())
-  task        Task     @relation(fields: [taskId], references: [id])
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author      User     @relation(fields: [authorId], references: [id])
 }
 
 model Notification {
@@ -220,4 +225,5 @@ model ActivityLog {
   entityId    Int
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id])
+
 }

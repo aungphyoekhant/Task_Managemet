@@ -2,17 +2,16 @@ import { Request, Response } from "express";
 import { taskUserService } from "../services/task_user.service.js";
 
 export const taskUserController = {
-  // 1. Task သို့ Member Assign လုပ်ရန် Controller
   assignUser: async (req: Request, res: Response) => {
     try {
       const taskId = Number(req.params.taskId);
-      const { userIdToAssign, workspaceId, projectId } = req.body;
+      const { userId, workspaceId, projectId } = req.body;
       
       const currentUserId = res.locals.user.id;
 
       const result = await taskUserService.assignUserToTask({
         taskId,
-        userIdToAssign: Number(userIdToAssign),
+        userId: Number(userId),
         currentUserId: Number(currentUserId),
         workspaceId: Number(workspaceId),
         projectId: Number(projectId),
@@ -34,13 +33,13 @@ export const taskUserController = {
   removeUser: async (req: Request, res: Response) => {
     try {
       const taskId = Number(req.params.taskId);
-      const userIdToRemove = Number(req.params.userId);
-      const workspaceId = Number(req.query.workspaceId || req.body.workspaceId);
+      const userId = Number(req.params.userId);
+      const workspaceId = Number(req.query.workspaceId || req.params.workspaceId);
       
       // @ts-ignore
       const currentUserId = res.locals.user.id || req.user?.id || req.body.currentUserId;
 
-      const result = await taskUserService.removeUserFromTask(taskId, userIdToRemove, currentUserId, workspaceId);
+      const result = await taskUserService.removeUserFromTask(taskId, userId, currentUserId, workspaceId);
 
       return res.status(200).json({
         success: true,
@@ -54,7 +53,6 @@ export const taskUserController = {
     }
   },
 
-  // 3. Task တစ်ခုခု၏ Assignees များကို ဆွဲထုတ်ရန် Controller
   getAssignees: async (req: Request, res: Response) => {
     try {
       const taskId = Number(req.params.taskId);

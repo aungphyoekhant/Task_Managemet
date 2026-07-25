@@ -1,15 +1,16 @@
 import { prisma } from "../lib/prisma.js"
-import { auditService } from "./audit.service.js"; // လိုအပ်ပါက audit service
+import { auditService } from "./audit.service.js"; 
 
 export const taskUserService = {
+
   assignUserToTask: async (payload: {
     taskId: number;
-    userIdToAssign: number;
+    userId: number;
     currentUserId: number;
     workspaceId: number;
     projectId: number;
   }) => {
-    const { taskId, userIdToAssign, currentUserId, workspaceId, projectId } = payload;
+    const { taskId, userId, currentUserId, workspaceId, projectId } = payload;
     
     const task = await prisma.task.findUnique({
       where: { id: taskId },
@@ -20,7 +21,7 @@ export const taskUserService = {
     }
 
     const workspaceMember = await prisma.workspaceUser.findFirst({
-      where: { userId: userIdToAssign, workspaceId: workspaceId },
+      where: { userId: userId, workspaceId: workspaceId },
     });
 
     if (!workspaceMember) {
@@ -28,12 +29,25 @@ export const taskUserService = {
     }
 
     return await prisma.$transaction(async (tx) => {
+      // ၁။ ဤ Task တွင် ယခင် assign လုပ်ထားပြီးသား user ရှိမရှိ စစ်ဆေးခြင်း
+      const existingAssignment = await tx.taskUser.findFirst({
+        where: { taskId: taskId },
+      });
+
+      // ၂။ အကယ်၍ ရှိနှင့်ပြီးသားဆိုလျှင် User အဟောင်းကို ဖျက်ထုတ်ခြင်း (Delete)
+      if (existingAssignment) {
+        await tx.taskUser.delete({
+          where: { id: existingAssignment.id },
+        });
+      }
+
+      // ၃။ User အသစ်ကို အစားထိုး ထည့်သွင်းခြင်း (Create)
       const taskUser = await tx.taskUser.create({
         data: {
           workspaceId: workspaceId,
           projectId: projectId,
           taskId: taskId,
-          userId: userIdToAssign,
+          userId: userId,
           role: "MEMBER",
         },
       });
@@ -41,20 +55,19 @@ export const taskUserService = {
       const notification = await tx.notification.create({
         data: {
           workspaceId: workspaceId,
-          userId: userIdToAssign,
+          userId: userId,
           message: `You have been assigned to task: "${task.title}"`,
         },
       });
 
       await tx.userNoti.create({
         data: {
-          userId: userIdToAssign,
+          userId: userId,
           notificationId: notification.id,
         },
       });
 
       await auditService.ActivityLog({
-        workspaceId: workspaceId,
         userId: currentUserId,
         action: "ASSIGN_TASK_USER",
         entityType: "TASK",
@@ -67,13 +80,13 @@ export const taskUserService = {
 
   removeUserFromTask: async (
     taskId: number,
-    userIdToRemove: number,
+    userId: number,
     currentUserId: number,
     workspaceId: number
   ) => {
     // 1. Assignment ရှိမရှိ စစ်ဆေးခြင်း
     const taskUser = await prisma.taskUser.findFirst({
-      where: { taskId: taskId, userId: userIdToRemove },
+      where: { taskId: taskId, userId: userId },
     });
 
     if (!taskUser) {
@@ -87,7 +100,6 @@ export const taskUserService = {
       });
 
       await auditService.ActivityLog({
-        workspaceId: workspaceId,
         userId: currentUserId,
         action: "REMOVE_TASK_USER",
         entityType: "TASK",
@@ -98,12 +110,24 @@ export const taskUserService = {
     });
   },
 
-  getTaskAssignees: async (taskId: number) => {
+ getTaskAssignees: async (taskId: number) => {
     return await prisma.taskUser.findMany({
       where: { taskId: taskId },
-      
+      include: {
+        user: {
+          select: {
+            email: true,
+            profile: {
+              select: {
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
     });
-  },
+  }
 
   
 };

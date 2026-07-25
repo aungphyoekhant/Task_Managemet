@@ -4,8 +4,8 @@ import { notificationController } from "../controllers/notification.controller.j
 
 export const router = express.Router();
 
-router.patch("/notifications/:id/read", auth, notificationController.markNotificationAsRead);
+router.patch("/notifications/:notificationId/read", auth, notificationController.markNotificationAsRead);
 router.get("/notifications", auth, notificationController.getNotifications);
 router.patch("/notifications/read-all", auth, notificationController.markAllAsRead);
-router.delete("/notifications/:id", auth, notificationController.deleteNotification);
-router.delete("/all-notifications", auth, notificationController.deleteNotification);
+router.delete("/notifications/:notificationId", auth, notificationController.deleteNotification);
+router.delete("/all-notifications", auth, notificationController.deleteAllNotifications);

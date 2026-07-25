@@ -17,6 +17,8 @@ export const commentController = {
      const { content } = bodyValue;
      const authorId = res.locals.user.id;
 
+     console.log("*************authorId", authorId)
+
      const newComment = await commentService.createComment({
        taskId,
        authorId,
@@ -62,11 +64,12 @@ export const commentController = {
 
     if (bodyError) return res.status(400).json({ con: false, msg: bodyError.details[0].message });
 
+    const {taskId} = paramsValue;
     const { commentId } = paramsValue;
     const { content } = bodyValue;
     const authorId = res.locals.user.id;
 
-    const result = await commentService.updateComment(Number(commentId), authorId, content);
+    const result = await commentService.updateComment(Number(taskId),Number(commentId), authorId, content);
 
     if (!result) {
       return res.status(404).json({ con: false, msg: "Comment not found or unauthorized" });
@@ -83,13 +86,14 @@ export const commentController = {
   deleteComment: async (req: Request, res: Response) => {
     try {
       const { commentId } = req.params;
+      const {taskId} = req.params;
       const { id: authorId } = res.locals.user;
 
       if (commentId === undefined || authorId === undefined) {
         return res.status(400).json({ con: false, msg: "Invalid commentId or authorId" });
       }
 
-      const result = await commentService.deleteComment(Number(commentId), authorId);
+      const result = await commentService.deleteComment(Number(taskId),Number(commentId), authorId);
 
       if (!result) {
         return res.status(404).json({ con: false, msg: "Comment not found" });

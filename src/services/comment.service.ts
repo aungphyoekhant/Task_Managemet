@@ -8,9 +8,22 @@ type CommentType = {
 };
 
 export const commentService = {
-  getCommentsByTaskId: async (taskId: number) => {
+ getCommentsByTaskId: async (taskId: number) => {
     return await prisma.comment.findMany({
       where: { taskId },
+      include: {
+        author: {
+          select: {
+            email: true,
+            profile: {
+              select: {
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
   },
@@ -35,6 +48,8 @@ export const commentService = {
         },
       });
 
+      console.log(`user id : ${data.authorId}, workspac id : ${task.workspaceId}`);
+
       await tx.notification.create({
         data: {
           workspaceId: task.workspaceId,
@@ -44,7 +59,6 @@ export const commentService = {
       });
 
       await auditService.ActivityLog({
-        workspaceId: task.workspaceId,
         userId: data.authorId,
         action: "CREATE_COMMENT",
         entityType: "TASK",
@@ -55,10 +69,10 @@ export const commentService = {
     });
   },
 
-  updateComment: async (commentId: number, authorId: number, content: string) => {
+  updateComment: async (taskId: number, commentId: number, authorId: number, content: string) => {
     return await prisma.$transaction(async (tx) => {
       const updatedComment = await tx.comment.update({
-        where: { id: commentId, authorId },
+        where: {taskId: taskId, id: commentId, authorId },
         data: { content },
       });
 
@@ -78,7 +92,6 @@ export const commentService = {
       });
 
       await auditService.ActivityLog({
-        workspaceId: updatedComment.workspaceId,
         userId: authorId,
         action: "UPDATE_COMMENT",
         entityType: "TASK",
@@ -89,12 +102,12 @@ export const commentService = {
     });
   },
 
-  deleteComment: async (commentId: number, authorId: number) => {
+  deleteComment: async (taskId: number, commentId: number, authorId: number) => {
     try {
       return await prisma.$transaction(async (tx) => {
-        // ၁။ Comment ကို Delete လုပ်ပါ
+      
         const comment = await tx.comment.delete({
-          where: { id: commentId, authorId },
+          where: { taskId: taskId, id: commentId, authorId },
         });
 
         const notification = await tx.notification.create({
@@ -115,7 +128,6 @@ export const commentService = {
 
         
         await auditService.ActivityLog({
-          workspaceId: comment.workspaceId,
           userId: authorId,
           action: "DELETE_COMMENT",
           entityType: "TASK",

@@ -78,8 +78,15 @@ export const taskService = {
       },
     });
 
+    const notification = await tx.notification.create({
+      data: {
+        workspaceId: newTask.workspaceId,
+        userId: userId,
+        message: `Task created successfully`,
+      },
+    });
+
     await auditService.ActivityLog({
-      workspaceId: data.workspaceId,
       userId: userId,
       action: "CREATE_TASK",
       entityType: "TASK",
@@ -130,9 +137,16 @@ export const taskService = {
         data: data,
       });
 
+      const notification = await tx.notification.create({
+        data: {
+          workspaceId: updatedTask.workspaceId,
+          userId: userId,
+          message: `Task updated successfully`,
+        },
+      });
+
 
       await auditService.ActivityLog({
-        workspaceId: updatedTask.workspaceId,
         userId: userId,
         action: "UPDATE_TASK",
         entityType: "TASK",
@@ -178,7 +192,6 @@ export const taskService = {
       });
 
       await auditService.ActivityLog({
-        workspaceId: task.workspaceId,
         userId: userId,
         action: "DELETE_TASK",
         entityType: "TASK",
@@ -215,7 +228,6 @@ export const taskService = {
       }
 
       await auditService.ActivityLog({
-        workspaceId: workspaceId,
         userId: currentUserId, 
         action: "UPDATE_TASK",
         entityType: "TASK",

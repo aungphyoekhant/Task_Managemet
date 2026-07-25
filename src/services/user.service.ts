@@ -107,6 +107,8 @@ export const userServices = {
       where: { email },
     });
 
+    console.log(`+++++++++++++++++++++++++++++++ ${user?.id}`)
+
     if (!user) throw new Error("Account not found");
 
     const isMatch = await bcrypt.compare(password, user.password);

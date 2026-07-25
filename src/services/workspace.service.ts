@@ -43,7 +43,7 @@ export const workspaceService = {
           where: { status: "ACCEPTED" },
         },
         workspaceUsers: true,
-        activityLogs: true,
+        
       },
     });
   },

@@ -4,7 +4,7 @@ import { auth } from "../middlewares/authMiddleware.js";
 
 export const router = express.Router();
 
-router.post("/:taskId/comments", auth, commentController.addComment);
-router.get("/:taskId/comments", auth, commentController.getComments);
-router.put("/comments/:commentId", auth, commentController.updateComment);
-router.delete("/comments/:commentId", auth, commentController.deleteComment);
+router.post("/tasks/:taskId/comments", auth, commentController.addComment);
+router.get("/tasks/:taskId/comments", auth, commentController.getComments); 
+router.put("/tasks/:taskId/comments/:commentId", auth, commentController.updateComment);
+router.delete("/tasks/:taskId/comments/:commentId", auth, commentController.deleteComment);

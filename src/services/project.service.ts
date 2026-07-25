@@ -51,7 +51,6 @@ export const projectService = {
       });
 
       await auditService.ActivityLog({
-        workspaceId: newProject.workspaceId,
         userId: newProject.createBy,
         action: "CREATE_PROJECT",
         entityType: "PROJECT",
@@ -167,7 +166,6 @@ export const projectService = {
       });
 
       await auditService.ActivityLog({
-        workspaceId: updatedProject.workspaceId,
         userId: updatedProject.createBy,
         action: "UPDATE_PROJECT",
         entityType: "PROJECT",
@@ -203,7 +201,6 @@ export const projectService = {
       });
 
       await auditService.ActivityLog({
-        workspaceId: project.workspaceId,
         userId: project.createBy,
         action: "DELETE_PROJECT",
         entityType: "PROJECT",

@@ -14,6 +14,7 @@ export const addCommentValidator = {
 
 export const updateCommentValidator = {
   params: Joi.object({
+    taskId : Joi.number().required(),
     commentId: Joi.number().required(),
   }),
   body: Joi.object({

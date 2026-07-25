@@ -86,7 +86,6 @@ export const projectUserService = {
       await tx.projectUser.delete({ where: { id: projectUserId } });
 
       await auditService.ActivityLog({
-        workspaceId: member.project.workspaceId,
         userId: actorUserId,
         action: "REMOVE_MEMBER",
         entityType: "PROJECT_USER",
