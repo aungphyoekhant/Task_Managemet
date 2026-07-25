@@ -1,3 +1,15 @@
 => ssh-keygen -t ed25519 -C "aungphyokhant.official@gmail.com"
 =>  ls -l ~/.ssh (place where generated ssh exist)
 
+=> git clone git@github.com:aungphyokhant/Task_Management.git
+=> cd Task_Management
+=> git remote add origin git@github.com:aungphyokhant/Task_Management.git
+=> git push -u origin master
+
+=> git remote -v
+
+=> git remote rm origin
+=> git remote add origin git@github.com:aungphyokhant/Task_Management.git
+=> git push -u origin master
+
+=> git remote -v
