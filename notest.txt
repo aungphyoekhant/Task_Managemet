@@ -5,6 +5,7 @@
 => cd Task_Management
 => git remote add origin git@github.com:aungphyokhant/Task_Management.git
 => git push -u origin master
+=> git pull origin main
 
 => git remote -v
 

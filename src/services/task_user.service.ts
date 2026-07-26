@@ -29,19 +29,18 @@ export const taskUserService = {
     }
 
     return await prisma.$transaction(async (tx) => {
-      // ၁။ ဤ Task တွင် ယခင် assign လုပ်ထားပြီးသား user ရှိမရှိ စစ်ဆေးခြင်း
+      
       const existingAssignment = await tx.taskUser.findFirst({
         where: { taskId: taskId },
       });
 
-      // ၂။ အကယ်၍ ရှိနှင့်ပြီးသားဆိုလျှင် User အဟောင်းကို ဖျက်ထုတ်ခြင်း (Delete)
+   
       if (existingAssignment) {
         await tx.taskUser.delete({
           where: { id: existingAssignment.id },
         });
       }
 
-      // ၃။ User အသစ်ကို အစားထိုး ထည့်သွင်းခြင်း (Create)
       const taskUser = await tx.taskUser.create({
         data: {
           workspaceId: workspaceId,
