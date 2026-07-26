@@ -11,6 +11,9 @@ export const taskUserService = {
     projectId: number;
   }) => {
     const { taskId, userId, currentUserId, workspaceId, projectId } = payload;
+
+    console.log(userId, workspaceId)
+
     
     const task = await prisma.task.findUnique({
       where: { id: taskId },
@@ -19,6 +22,7 @@ export const taskUserService = {
     if (!task) {
       throw new Error("Task not found.");
     }
+
 
     const workspaceMember = await prisma.workspaceUser.findFirst({
       where: { userId: userId, workspaceId: workspaceId },
