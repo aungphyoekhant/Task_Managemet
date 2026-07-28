@@ -12,9 +12,6 @@ export const projectUserService = {
       throw new Error("User is not part of this workspace");
     }
 
-    // if (userInWorkspace.role !== "MEMBER") {
-    //   throw new Error("Only members can be added to a project. Admins/Owners cannot be added as Project Users.");
-    // }
 
     const isAlreadyMember = await prisma.projectUser.findFirst({
       where: { projectId, userId },
@@ -24,13 +21,15 @@ export const projectUserService = {
       throw new Error("User is already a member of this project");
     }
 
+    const assignedRole = role || userInWorkspace.role;
+
     return await prisma.projectUser.create({
       data: {
         workspaceId,
         projectId,
         userId: userId,
         addedById: addedById,
-        role : role || "MEMBER"
+        role : assignedRole,
       },
     });
   },

@@ -178,7 +178,6 @@ model TaskUser {
   role        Role     @default(MEMBER)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

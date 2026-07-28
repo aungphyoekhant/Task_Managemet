@@ -4,3 +4,4 @@ import express from "express";
 
 export const router = express.Router();
 router.get("/activity", auth, activityController.getActivityLogs);
+router.delete("/activity", auth, activityController.deleteAllActivityLogs);

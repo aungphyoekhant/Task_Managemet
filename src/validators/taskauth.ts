@@ -20,6 +20,7 @@ export const updateTaskValidator = {
   }),
   body: Joi.object({
     workspaceId: Joi.number().required(),
+    projectId: Joi.number().required(),
     title: Joi.string().optional(),
     description: Joi.string().allow(null, '').optional(),
     priority: Joi.string().valid("LOW", "MEDIUM", "HIGH").optional(),
@@ -31,10 +32,11 @@ export const updateTaskValidator = {
 
 export const updateAssignedTaskValidator = {
   params: Joi.object({
+    workspaceId: Joi.number().required(),
+    projectId: Joi.number().required(),
     taskId: Joi.number().required(),
   }),
   body: Joi.object({
     status: Joi.string().valid("TODO", "IN_PROGRESS", "DONE").optional(),
-    priority: Joi.string().valid("LOW", "MEDIUM", "HIGH").optional(),
   }).min(1),
 };

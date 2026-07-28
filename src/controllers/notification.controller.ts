@@ -3,7 +3,7 @@ import { notificationService } from "../services/notification.service.js";
 export const notificationController = {
   markNotificationAsRead: async (req: Request, res: Response) => {
     const userId = Number(res.locals.user.id);
-    const notificationId = Number(req.params.id);
+    const notificationId = Number(req.params.notificationId);
 
     if (!notificationId) {
       return res.status(400).json({ con: false, msg: "Notification id is required" });
@@ -68,7 +68,7 @@ export const notificationController = {
 
   deleteNotification: async (req: Request, res: Response) => {
     const userId = Number(res.locals.user.id);
-    const notificationId = Number(req.params.id);
+    const notificationId = Number(req.params.notificationId);
 
     if (!notificationId) {
       return res.status(400).json({ con: false, msg: "Notification id is required" });

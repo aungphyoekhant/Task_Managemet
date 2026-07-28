@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js"
 import { CreateTaskPayload } from "../types/global.js";
 import { auditService } from "./audit.service.js";
+import { TaskStatus } from "../../generated/prisma/client.js";
 
 export const taskService = {
   canManageProjectTasks: async (projectId: number, userId: number) => {
@@ -108,6 +109,7 @@ export const taskService = {
 
       include: {
         comments: true,
+        taskUsers: true,
       },
     });
   },
@@ -119,7 +121,7 @@ export const taskService = {
       skip: cursor ? 1 : 0,
       where: { workspaceId },
       orderBy: { createdAt: "desc" },
-      include: { comments: true },
+      include: { comments: true, taskUsers: true },
     });
 
     const hasNextPage = tasks.length > limit;
@@ -200,17 +202,27 @@ export const taskService = {
     });
   },
 
- updateAssignedTask: async (taskId: number, data: { status?: any; priority?: any }, currentUserId: number, workspaceId: number) => {
-    return await prisma.$transaction(async (tx) => {
-      const updatedTask = await tx.task.update({
-        where: { id: taskId },
-        data: data,
-        include: {
-          taskUsers: true, 
-        }, 
-      }); 
+ updateAssignedTask: async (
+  taskId: number,
+  data: { status?: TaskStatus  },
+  currentUserId: number,
+  workspaceId: number,
+  projectId?: number,
+) => {
+  return await prisma.$transaction(async (tx) => {
+    const updatedTask = await tx.task.update({
+      where: { id: taskId },
+      data: {
+        ...(data.status && { status: data.status }),
+      },
+      include: {
+        taskUsers: true, 
+      }, 
+    }); 
 
-      for (const tu of updatedTask.taskUsers) {
+    for (const tu of updatedTask.taskUsers) {
+      
+      if (tu.userId !== currentUserId) {
         const notification = await tx.notification.create({
           data: {
             workspaceId: workspaceId,
@@ -226,17 +238,18 @@ export const taskService = {
           },
         });
       }
+    }
 
-      await auditService.ActivityLog({
-        userId: currentUserId, 
-        action: "UPDATE_TASK",
-        entityType: "TASK",
-        entityId: taskId,
-      });
-
-      return updatedTask;
+    await auditService.ActivityLog({
+      userId: currentUserId, 
+      action: "UPDATE_TASK",
+      entityType: "TASK",
+      entityId: taskId,
     });
-  },
+
+    return updatedTask;
+  });
+},
 
   isUserAssignedToTask: async (taskId: number, userId: number) => {
     const taskUser = await prisma.taskUser.findFirst({

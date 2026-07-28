@@ -12,4 +12,12 @@ export const activityService = {
   });
 },
 
+  deleteAllActivityLogsByUserId : async (userId: number) => {
+    return await prisma.activityLog.deleteMany({
+      where: {
+        userId: userId,
+      },
+    });
+  },
+
 };

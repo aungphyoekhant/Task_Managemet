@@ -82,8 +82,8 @@ export const workspaceInvitationService = {
     
     //const inviteLink = `http://localhost:5173/accept?token=${token}`;
     
-    const frontendUrl = process.env.FRONTEND_URL || "http://165.227.168.23";
-    const inviteLink = `${frontendUrl}/accept?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const inviteLink = `http://localhost:5173/accept?token=${token}`;
     const ownerName = workspace.profile?.[0]?.name || "Workspace Owner";
 
     const htmlContent = `
