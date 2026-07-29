@@ -5,3 +5,4 @@ import { checkWorkspaceRole } from "../middlewares/roleMiddleware.js";
 
 export const router = express.Router();
 router.get("/workspaces/:workspaceId/users", auth, checkWorkspaceRole(["OWNER","ADMIN"]), workspaceUserController.getWorkspaceUsers);
+router.delete("/workspaces/:workspaceId/users/:userId", auth, checkWorkspaceRole(["OWNER","ADMIN"]), workspaceUserController.removeWorkspaceUser);

@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 app.use(
   cors({
     origin: [
+      "https://taskmgr.denogameshop.com",
       "http://localhost:5173",
       "http://165.227.168.23",
       "http://165.227.168.23:80"
@@ -20,6 +21,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+
 
 
 

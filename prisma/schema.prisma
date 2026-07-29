@@ -93,7 +93,7 @@ model Workspace {
   invitations    Invitation[]
   notifications  Notification[]
   projectUsers   ProjectUser[]
-
+  taskUsers      TaskUser[]
 }
 
 model Invitation {
@@ -116,8 +116,10 @@ model WorkspaceUser {
   userId      Int
   role         Role          @default(MEMBER)
   workspace   Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id],onDelete: Cascade)
   @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@index([userId])
 }
 
 model Project {
@@ -134,6 +136,7 @@ model Project {
   creator      User          @relation("CreatedProjects", fields: [createBy], references: [id])
   projectUsers ProjectUser[]
   tasks        Task[]
+  taskUsers   TaskUser[]
 }
 
 model ProjectUser {
@@ -147,6 +150,8 @@ model ProjectUser {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+
+  @@index([workspaceId])
   @@index([userId])
   @@index([projectId])
 }
@@ -170,18 +175,23 @@ model Task {
 }
 
 model TaskUser {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   workspaceId Int
   projectId   Int
   userId      Int
   taskId      Int
-  role        Role     @default(MEMBER)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role      @default(MEMBER)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade) 
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade) 
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, taskId]) 
+  @@index([workspaceId])
+  @@index([projectId])   
+  @@index([userId])      
 }
 
 model Comment {

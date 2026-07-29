@@ -66,14 +66,16 @@ export const projectUserService = {
 
  removeMember: async (projectUserId: number, actorUserId: number) => {
     return await prisma.$transaction(async (tx) => {
+      
       const member = await tx.projectUser.findUnique({
         where: { id: projectUserId },
-        include: { project: { select: { workspaceId: true } } }
+        include: { 
+          project: { select: { workspaceId: true } } 
+        }
       });
 
       if (!member) throw new Error("Member not found");
 
-      
       const actorRole = await tx.workspaceUser.findFirst({
         where: { userId: actorUserId, workspaceId: member.project.workspaceId }
       });
@@ -84,6 +86,16 @@ export const projectUserService = {
 
       await tx.projectUser.delete({ where: { id: projectUserId } });
 
+     
+      await tx.taskUser.deleteMany({
+        where: {
+          projectId: member.projectId,
+          userId: member.userId,
+          workspaceId: member.project.workspaceId
+        }
+      });
+
+      // 5. Activity Log မှတ်တမ်းတင်မည်
       await auditService.ActivityLog({
         userId: actorUserId,
         action: "REMOVE_MEMBER",
