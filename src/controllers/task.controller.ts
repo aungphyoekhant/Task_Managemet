@@ -71,16 +71,29 @@ export const taskController = {
     }
   },
 
-  getTasks: async (req: Request, res: Response) => {
+ getTasks: async (req: Request, res: Response) => {
     try {
-      const { workspaceId, cursor, limit } = req.query;
+      const workspaceId = req.query.workspaceId || req.params.workspaceId;
+      const projectId = req.query.projectId || req.params.projectId;
+      const { cursor, limit } = req.query;
 
-      if (!workspaceId) return res.status(400).json({ con: false, msg: "workspaceId is required" });
+      console.log("--> Controller WorkspaceId:", workspaceId); // ဒီနေရာမှာ 14 သို့မဟုတ် တန်ဖိုးပေါ်လာရပါမယ်
+      console.log("--> Controller ProjectId:", projectId);     // ဒီနေရာမှာ 2 သို့မဟုတ် တန်ဖိုးပေါ်လာရပါမယ်
 
-      const result = await taskService.getTasks(Number(workspaceId), cursor ? Number(cursor) : undefined, limit ? Number(limit) : 10);
+      if (!workspaceId || !projectId) {
+        return res.status(400).json({ con: false, msg: "workspaceId and projectId are required" });
+      }
+
+      const result = await taskService.getTasks(
+        Number(workspaceId), 
+        Number(projectId), 
+        cursor ? Number(cursor) : undefined, 
+        limit ? Number(limit) : 10
+      );
 
       return res.status(200).json({ con: true, ...result });
     } catch (error: any) {
+      console.error("--> GetTasks Error Details:", error); // Error ရဲ့ stack trace အမှန်ကို ကြည့်ရန်
       return res.status(500).json({ con: false, msg: error.message });
     }
   },

@@ -105,9 +105,17 @@ export const commentService = {
   deleteComment: async (taskId: number, commentId: number, authorId: number) => {
     try {
       return await prisma.$transaction(async (tx) => {
-      
+        
+        const existingComment = await tx.comment.findFirst({
+          where: { id: commentId, taskId: taskId, authorId },
+        });
+
+        if (!existingComment) {
+          return null; 
+        }
+
         const comment = await tx.comment.delete({
-          where: { taskId: taskId, id: commentId, authorId },
+          where: { id: commentId },
         });
 
         const notification = await tx.notification.create({
@@ -117,7 +125,6 @@ export const commentService = {
             message: `Comment deleted to task ID ${comment.taskId}`,
           },
         });
-
         
         await tx.userNoti.create({
           data: {
@@ -125,7 +132,6 @@ export const commentService = {
             notificationId: notification.id,
           },
         });
-
         
         await auditService.ActivityLog({
           userId: authorId,

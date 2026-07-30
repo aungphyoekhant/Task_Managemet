@@ -114,21 +114,45 @@ export const taskService = {
     });
   },
 
-  getTasks: async (workspaceId: number, cursor?: number, limit: number = 10) => {
+  getTasks: async (workspaceId: number, projectId: number, cursor?: number, limit: number = 10) => {
+    // 1. Task များကို ယူခြင်း (projectId ပါ ထည့်စစ်ရန်)
     const tasks = await prisma.task.findMany({
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
-      where: { workspaceId },
+      where: { 
+        workspaceId: Number(workspaceId),
+        projectId: Number(projectId),
+      },
       orderBy: { createdAt: "desc" },
-      include: { comments: true, taskUsers: true },
+      include: { 
+        comments: true, 
+        taskUsers: true 
+      },
     });
 
     const hasNextPage = tasks.length > limit;
     const nextCursor = hasNextPage ? tasks[limit - 1].id : undefined;
     const data = hasNextPage ? tasks.slice(0, limit) : tasks;
 
-    return { data, nextCursor, hasNextPage };
+    // 2. Workspace User များကိုပါ တစ်ခတည်း တွဲထုတ်ပေးခြင်း
+    const workspaceUsers = await prisma.workspaceUser.findMany({
+      where: {
+        workspaceId: Number(workspaceId),
+      },
+      select: {
+        role: true,
+        userId: true,
+        workspaceId: true,
+      },
+    });
+
+    return { 
+      data, 
+      workspaceUsers, // ⚡️ Workspace Users များကိုပါ ထည့်ပေးလိုက်သည်
+      nextCursor, 
+      hasNextPage 
+    };
   },
 
  updateTask: async (taskId: number, data: any, userId: number) => {

@@ -107,6 +107,8 @@ export const projectService = {
       },
       select: {
         role: true,
+        userId: true,
+        workspaceId: true,
       },
     });
 

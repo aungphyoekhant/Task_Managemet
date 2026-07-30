@@ -89,8 +89,8 @@ export const commentController = {
       const {taskId} = req.params;
       const { id: authorId } = res.locals.user;
 
-      if (commentId === undefined || authorId === undefined) {
-        return res.status(400).json({ con: false, msg: "Invalid commentId or authorId" });
+     if (!commentId || !taskId || !authorId) {
+        return res.status(400).json({ con: false, msg: "Invalid commentId, taskId, or authorId" });
       }
 
       const result = await commentService.deleteComment(Number(taskId),Number(commentId), authorId);
