@@ -17,7 +17,6 @@ export const commentController = {
      const { content } = bodyValue;
      const authorId = res.locals.user.id;
 
-     console.log("*************authorId", authorId)
 
      const newComment = await commentService.createComment({
        taskId,

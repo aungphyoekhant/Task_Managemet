@@ -5,7 +5,6 @@ export const activityController = {
   getActivityLogs: async (req: Request, res: Response) => {
     try {
       const userId = Number(res.locals.user.id);
-      console.log("user id is : ", userId);
       
       const logs = await activityService.getActivityLogsByUserId(userId);
 

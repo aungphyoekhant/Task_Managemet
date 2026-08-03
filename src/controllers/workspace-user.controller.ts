@@ -15,7 +15,6 @@ export const workspaceUserController = {
         workspaceId
       })
 
-      console.log(value)
 
       if(error){
         return res.status(400).json({con : false, msg : error.details[0].message })
@@ -23,7 +22,6 @@ export const workspaceUserController = {
 
       const data = await authService.getWorkspaceUserRole({ userId, workspaceId });
 
-      console.log(data)
 
       if (!data) {
         return res.status(404).json({ con: false, msg: "Workspace not found" });

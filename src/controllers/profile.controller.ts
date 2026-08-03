@@ -34,7 +34,6 @@ export const profileController = {
   upsertProfile: async (req: Request, res: Response) => {
     try {
       const userId = Number(res.locals.user.id);
-      console.log(res.locals.user);
       const body = req.body || {};
 
       const existingData = await profileService.getProfile(userId);

@@ -45,7 +45,6 @@ export const projectController = {
         currentPage: result.currentPage,
       };
 
-      console.log("Project API Response:", responsePayload);
 
       return res.status(200).json({ 
         con: true, 
@@ -63,7 +62,6 @@ export const projectController = {
       const projectId = Number(req.params.projectId);
       const workspaceId = Number(req.params.workspaceId); 
 
-      console.log("Fetching project - ID:", projectId, "WorkspaceID:", workspaceId);
 
       const project = await projectService.getProjectById(projectId, workspaceId);
 
@@ -90,7 +88,6 @@ export const projectController = {
 
     const { projectName, description,status, startDate, endDate, workspaceId } = req.body;
 
-    console.log(req.body)
 
     const userId = res.locals.user.id;
 
@@ -105,7 +102,6 @@ export const projectController = {
         return res.status(403).json({ con: false, msg: "Access denied" });
       }
 
-      console.log(member.role);
 
       const project = await projectService.createProject({
         projectName,

@@ -18,7 +18,6 @@ export const userController = {
       const { email, password, name, token } = req.body;
       let userData;
 
-      console.log(`+++++++++++++++++++++++++++++++ ${token}`)
 
       if (token) {
         userData = await userServices.inviteRegister({ email, password, name }, token);
@@ -50,7 +49,6 @@ export const userController = {
   login: async (req: Request, res: Response) => {
     try {
       const result = loginValidator.validate(req.body);
-      console.log(result);
       if (result.error) return res.status(400).json({ con: false, msg: result.error.details[0].message });
 
       const { email, password, token } = result.value;
@@ -73,7 +71,6 @@ export const userController = {
 
   // LOGOUT
   logout: async (req: Request, res: Response) => {
-    console.log("Logout");
 
     try {
       const userId = Number(res.locals.user.id);
@@ -89,14 +86,12 @@ export const userController = {
   refreshToken: async (req: Request, res: Response) => {
     try {
       const { refreshToken } = req.body;
-      console.log(req.body)
       if (!refreshToken) return res.status(401).json({ con: false, msg: "Refresh token required" });
 
       const payload = authService.verifyRefreshToken(refreshToken);
 
       const newAccessToken = jwt.sign({ id: payload.id}, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "15m" });
 
-      console.log("New Access Token :", newAccessToken)
       return res.status(200).json({ con: true, accessToken: newAccessToken });
     } catch (error: any) {
       return res.status(403).json({ con: false, msg: "Invalid or expired token" });
@@ -109,7 +104,6 @@ export const userController = {
       const { email } = req.body;
       
 
-      console.log("Forgot Password Email: ", req.body)
       if (!email) return res.status(400).json({ success: false, message: "Email is required." });
 
       const checkEmail = await authService.findByEmail(email);
@@ -128,7 +122,6 @@ export const userController = {
   verifyCode: async (req: Request, res: Response) => {
     try {
       const { email, code } = req.body;
-      console.log("Email and Code: ", req.body)
 
       if (!email || !code) {
         return res.status(400).json({ success: false, message: "Email and code are required." });
@@ -146,7 +139,6 @@ export const userController = {
     try {
       const { email, code, newPassword, confirmPassword } = req.body;
 
-      console.log("Email and Code and New Password and Confirm Password: ", req.body)
 
       if (!email || !code || !newPassword || !confirmPassword) {
         return res.status(400).json({ success: false, message: "All fields are required." });
@@ -157,7 +149,6 @@ export const userController = {
       }
 
       const result = await userServices.resetPasswordWithCode(email, code, newPassword);
-      console.log("+++++++++++++++++++++++++++++++ result",result)
       return res.status(200).json({ success: true, ...result });
     } catch (error) {
       return res.status(400).json({ success: false, message: error });

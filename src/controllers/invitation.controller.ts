@@ -8,11 +8,9 @@ export const invitationController = {
   acceptInvitation: async (req: Request, res: Response) => {
     const { token } = req.body;
 
-    console.log("-------------",token)
 
     const decoded = jwt.decode(token); 
 
-console.log("Decoded Token Data:", decoded);
 
     if (!token || typeof token !== "string") {
       return res.status(400).json({ con: false, msg: "Token is required" });

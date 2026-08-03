@@ -28,10 +28,8 @@ export const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("A user connected via socket:", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("A user disconnected:", socket.id);
   });
 });
 
@@ -61,8 +59,7 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   if (req.url.startsWith('/uploads/')) {
     const filePath = path.join(process.cwd(), req.url);
-    console.log("Checking file at:", filePath);
-    console.log("Does file exist?", fs.existsSync(filePath));
+    
   }
   next();
 });

@@ -8,7 +8,6 @@ export const taskUserController = {
     const { userIdToAssign, workspaceId, projectId } = req.body;
 
 
-    console.log(req.body)
     
     const currentUserId = res.locals.user?.id;
 

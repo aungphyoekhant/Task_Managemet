@@ -29,7 +29,6 @@ export const taskController = {
         dueDate,
       });
 
-      console.log(value)
 
       if (error) {
         return res.status(400).json({ con: false, msg: error.details[0].message });
@@ -98,7 +97,6 @@ export const taskController = {
           status ? (status as string) : undefined
         );
 
-        console.log("Task Result:", result);
 
         return res.status(200).json({ con: true, ...result });
       } catch (error: any) {

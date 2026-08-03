@@ -10,7 +10,6 @@ export const deleteFile = (filePath: string | null) => {
   try {
     if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
-      console.log(`Successfully deleted: ${fullPath}`);
     }
   } catch (err) {
     console.error("Error deleting file:", err);

@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { userNotiController } from "../controllers/user-noti.controller.js";
+import { auth } from "../middlewares/authMiddleware.js";
+const router = Router();
+// Notification စနစ်
+router.get("/", auth, userNotiController.getNotifications); // Fetch
+router.patch("/userNoit/:id/read", auth, userNotiController.markNotificationAsRead); // Update Read/Unread
+router.delete("//all", auth, userNotiController.deleteAllNotifications); // Delete All
+router.delete("//:id", auth, userNotiController.deleteNotification); // Delete One
+export default router;

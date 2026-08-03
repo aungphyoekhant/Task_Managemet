@@ -82,9 +82,7 @@ export const workspaceService = {
             ownerId: userId,
           },
         });
-        console.log("Workspace Created ID:", workspace.id);
-        console.log("Workspace Name : ", name)
-        console.log("ownerId", userId)
+       
 
         const userRole = await tx.workspaceUser.create({
           data: {
@@ -94,7 +92,6 @@ export const workspaceService = {
           },
         });
 
-        console.log("Created User Role Object:", userRole);
         return workspace;
       });
     } catch (error) {

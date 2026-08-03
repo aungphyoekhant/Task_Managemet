@@ -18,7 +18,6 @@ export const getAllWorkspacesStats = async (req: Request, res: Response) => {
     // Call Dashboard Service with userId filter
     const data = await dashboardService.getAllWorkspacesStats(userId);
 
-    console.log("All Workspaces Dashboard Data:", data);
     return res.status(200).json({
       con: true,
       data,
@@ -65,7 +64,6 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     });
 
     // 4. Return Standard Success Response
-    console.log("dashboard data", data);
     return res.status(200).json({
       con: true,
       data,

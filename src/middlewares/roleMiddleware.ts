@@ -34,7 +34,6 @@ export const checkWorkspaceRole = (allowedRoles: string[]) => {
 
       next();
     } catch (error) {
-      console.log(error)
       return res.status(500).json({ con: false, msg: "Internal server error" });
     }
   };

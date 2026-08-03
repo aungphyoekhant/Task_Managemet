@@ -50,7 +50,6 @@ export const commentService = {
         },
       });
 
-      console.log(`user id : ${data.authorId}, workspac id : ${task.workspaceId}`);
 
       await tx.notification.create({
         data: {

@@ -5,7 +5,6 @@ import { createWorkspaceValidator, dropWorkspaceValidator, getWorkspaceValidator
 export const workspaceController = {
   getAllWorkspace: async (req: Request, res: Response) => {
 
-    console.log(res.locals.user)
 
     const userId = Number(res.locals.user.id);
 
@@ -24,7 +23,6 @@ export const workspaceController = {
 
 
     } catch (error) {
-      console.log("Get All Workspaces Error:", error);
       return res.status(500).json({ con: false, msg: error });
     }
   },
@@ -33,14 +31,12 @@ export const workspaceController = {
 
     const userId = Number(res.locals.user.id);
     const workspaceId = Number(req.params.id);
-    console.log("Fetching workspace - ID:", workspaceId, "UserID:", userId);
 
     const { error, value } = getWorkspaceValidator.validate({
       userId,
       workspaceId
     })
 
-    console.log(value)
     if (error) {
       return res.status(400).json({ con: false, msg: error.details[0].message })
     }
@@ -54,7 +50,6 @@ export const workspaceController = {
         workspace,
       });
 
-      console.log(workspace)
     } catch (error) {
       console.error("Get Workspace Error:", error);
       res.status(500).json({ msg: "Error fetching workspace" });
@@ -131,7 +126,6 @@ export const workspaceController = {
       userId: userId,
       ...(logoUrl !== undefined && { logo: logoUrl })
     });
-    console.log(value)
 
     if (error) {
       if (file) deleteFile(file.path);

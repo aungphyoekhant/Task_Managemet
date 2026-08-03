@@ -39,7 +39,6 @@ const handleInvitation = async (tx: any, userId: number, token: string) => {
 
 export const userServices = {
   register: async (userData: RegisterPayload) => {
-    console.log("++++++++++++++++++++++++++ normal register function is called ");
     
     const existingUser = await prisma.user.findUnique({
       where: { email: userData.email },
@@ -86,7 +85,6 @@ export const userServices = {
   },
 
   inviteRegister: async (userData: RegisterPayload, token: string) => {
-    console.log("********************** invite register function is called ");
 
     const existingUser = await prisma.user.findUnique({
       where: { email: userData.email },
@@ -125,7 +123,6 @@ export const userServices = {
       where: { email },
     });
 
-    console.log(`+++++++++++++++++++++++++++++++ ${user?.id}`)
 
     if (!user) throw new Error("Account not found");
 
@@ -293,7 +290,6 @@ export const userServices = {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`🔒 Your Password Reset Code is: ${resetCode}`);
   } catch (error) {
     console.error("Email Sending Failed:", error);
     throw new Error("Failed to send verification email. Please try again.");
@@ -363,7 +359,6 @@ export const userServices = {
       }),
     ]);
 
-    console.log("User and related invitations deleted successfully");
     return { message: "Account deleted successfully." };
   },
 

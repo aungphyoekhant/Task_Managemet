@@ -7,8 +7,7 @@ export const updateRoleController = {
   updateRole: async (req: Request, res: Response) => {
     try {
 
-      console.log(req.body)
-      console.log(req.params)
+      
 
       const { error: paramsError } = updateRoleValidator.params.validate(req.params);
 

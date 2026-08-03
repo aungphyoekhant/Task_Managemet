@@ -21,7 +21,6 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
       email: decoded.email,
     };
 
-    console.log("User ID:", res.locals.user.id);
     next();
   } catch (err: any) {
     if (err.name === "TokenExpiredError") {
