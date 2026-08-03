@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma.js"
 import { CreateTaskPayload } from "../types/global.js";
 import { auditService } from "./audit.service.js";
 import { TaskStatus } from "../../generated/prisma/client.js";
+import { io } from "../index.js";
 
 export const taskService = {
   canManageProjectTasks: async (projectId: number, userId: number) => {
@@ -114,48 +115,75 @@ export const taskService = {
     });
   },
 
-  getTasks: async (workspaceId: number, projectId: number, cursor?: number, limit: number = 10) => {
-    // 1. Task များကို ယူခြင်း (projectId ပါ ထည့်စစ်ရန်)
-    const tasks = await prisma.task.findMany({
-      take: limit + 1,
-      cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0,
-      where: { 
+  getTasks: async (workspaceId: number, projectId: number, userId: number, cursor?: number, limit: number = 10, status?: string) => {
+      
+      const member = await prisma.workspaceUser.findUnique({
+        where: { 
+          userId_workspaceId: { 
+            workspaceId: Number(workspaceId), 
+            userId: Number(userId) 
+          } 
+        },
+      });
+
+      if (!member) throw new Error("Access denied");
+
+      const whereCondition: any = { 
         workspaceId: Number(workspaceId),
         projectId: Number(projectId),
-      },
-      orderBy: { createdAt: "desc" },
-      include: { 
-        comments: true, 
-        taskUsers: true 
-      },
-    });
+      };
 
-    const hasNextPage = tasks.length > limit;
-    const nextCursor = hasNextPage ? tasks[limit - 1].id : undefined;
-    const data = hasNextPage ? tasks.slice(0, limit) : tasks;
+      if (status && status !== "ALL") {
+        whereCondition.status = status;
+      }
 
-    // 2. Workspace User များကိုပါ တစ်ခတည်း တွဲထုတ်ပေးခြင်း
-    const workspaceUsers = await prisma.workspaceUser.findMany({
-      where: {
-        workspaceId: Number(workspaceId),
-      },
-      select: {
-        role: true,
-        userId: true,
-        workspaceId: true,
-      },
-    });
+      if (member.role === "MEMBER") {
+        whereCondition.taskUsers = {
+          some: { userId: Number(userId) },
+        };
+      }
 
-    return { 
-      data, 
-      workspaceUsers, // ⚡️ Workspace Users များကိုပါ ထည့်ပေးလိုက်သည်
-      nextCursor, 
-      hasNextPage 
-    };
-  },
+      const total = await prisma.task.count({
+        where: whereCondition,
+      });
 
- updateTask: async (taskId: number, data: any, userId: number) => {
+      const tasks = await prisma.task.findMany({
+        take: limit + 1,
+        cursor: cursor ? { id: cursor } : undefined,
+        skip: cursor ? 1 : 0,
+        where: whereCondition,
+        orderBy: { createdAt: "desc" },
+        include: { 
+          comments: true, 
+          taskUsers: true 
+        },
+      });
+
+      const hasNextPage = tasks.length > limit;
+      const nextCursor = hasNextPage ? tasks[limit - 1].id : undefined;
+      const data = hasNextPage ? tasks.slice(0, limit) : tasks;
+
+      const workspaceUsers = await prisma.workspaceUser.findMany({
+        where: {
+          workspaceId: Number(workspaceId),
+        },
+        select: {
+          role: true,
+          userId: true,
+          workspaceId: true,
+        },
+      });
+
+      return { 
+        total, 
+        data, 
+        workspaceUsers, 
+        nextCursor, 
+        hasNextPage 
+      };
+    },
+
+  updateTask: async (taskId: number, data: any, userId: number) => {
     return await prisma.$transaction(async (tx) => {
      
       const updatedTask = await tx.task.update({
@@ -183,52 +211,93 @@ export const taskService = {
     });
   },
 
-  deleteTask: async (taskId: number, userId: number) => {
-    return await prisma.$transaction(async (tx) => {
-      const task = await tx.task.findUnique({
-        where: { id: taskId },
-        select: { workspaceId: true },
-      });
+    deleteTask: async (taskId: number, userId: number) => {
+  // 1. Data Types Normalization
+  const tId = Number(taskId);
+  const actorUserId = Number(userId);
 
-      if (!task) throw new Error("Task not found");
+  // 2. Task, Workspace နဲ့ Task assign ခံထားရတဲ့ User များကို ရှာဖွေခြင်း
+  const task = await prisma.task.findUnique({
+    where: { id: tId },
+    select: { 
+      workspaceId: true, 
+      title: true,
+      taskUsers: { select: { userId: true } } // Task Assign ခံထားရသည့် မန်ဘာများ
+    },
+  });
 
-      const member = await tx.workspaceUser.findFirst({
-          where: { userId, workspaceId: task.workspaceId }
-        });
+  if (!task) throw new Error("Task not found");
 
-     if (!member || (member.role !== "ADMIN" && member.role !== "OWNER")) {
-         throw new Error("Access denied: Only Admins/Owners can delete tasks");
-      }
+  // 3. Permission စစ်ဆေးခြင်း
+  const member = await prisma.workspaceUser.findFirst({
+    where: { userId: actorUserId, workspaceId: task.workspaceId }
+  });
 
-      await tx.task.delete({ where: { id: taskId } });
+  if (!member || (member.role !== "ADMIN" && member.role !== "OWNER")) {
+    throw new Error("Access denied: Only Admins/Owners can delete tasks");
+  }
 
+  // Noti ပို့ရမည့် Target User များ (Task Members + Action လုပ်သူ)
+  const taskMemberIds = task.taskUsers.map((tu) => tu.userId);
+  const targetUserIds = Array.from(new Set([...taskMemberIds, actorUserId]));
+
+  const wId = task.workspaceId;
+  const taskTitle = task.title;
+
+  // 4. Database Transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Target User အားလုံးအတွက် Notification ဆောက်ခြင်း
+    for (const uId of targetUserIds) {
       const notification = await tx.notification.create({
         data: {
-          workspaceId: task.workspaceId,
-          userId: userId,
-          message: `Task deleted successfully`,
+          workspaceId: wId,
+          userId: uId,
+          message: `Task "${taskTitle}" has been deleted.`,
+          isRead: false,
         },
       });
 
       await tx.userNoti.create({
         data: {
-          userId: userId,
+          userId: uId,
           notificationId: notification.id,
         },
       });
+    }
 
+    // Task ကို ဖျက်ခြင်း (TaskUser အလိုအလျောက် Cascade Delete/Clean ထွက်သွားမည်)
+    await tx.task.delete({ where: { id: tId } });
+
+    // Activity Log ရေးခြင်း
+    if (auditService?.ActivityLog) {
       await auditService.ActivityLog({
-        userId: userId,
+        userId: actorUserId,
         action: "DELETE_TASK",
         entityType: "TASK",
-        entityId: taskId,
+        entityId: tId,
+      });
+    }
+
+    return { success: true };
+  });
+
+  // 5. Transaction ပြီးမြောက်မှ Socket Emit တိုက်ရိုက်လုပ်ခြင်း
+  if (io) {
+    targetUserIds.forEach((uId) => {
+      io.emit(`notification::${uId}`, {
+        title: "Task Deleted",
+        message: `Task "${taskTitle}" has been deleted.`,
+        createdAt: new Date(),
       });
     });
-  },
+  }
 
- updateAssignedTask: async (
+  return result;
+},
+
+  updateAssignedTask: async (
   taskId: number,
-  data: { status?: TaskStatus  },
+  data: { status?: TaskStatus },
   currentUserId: number,
   workspaceId: number,
   projectId?: number,
@@ -245,7 +314,6 @@ export const taskService = {
     }); 
 
     for (const tu of updatedTask.taskUsers) {
-      
       if (tu.userId !== currentUserId) {
         const notification = await tx.notification.create({
           data: {
@@ -260,6 +328,10 @@ export const taskService = {
             userId: tu.userId,
             notificationId: notification.id,
           },
+        });
+
+        io.emit(`notification::${tu.userId}`, {
+          message: `Task "${updatedTask.title}" status has been updated to ${updatedTask.status}`,
         });
       }
     }
@@ -281,4 +353,4 @@ export const taskService = {
     });
     return !!taskUser; 
   },
-};
+  };

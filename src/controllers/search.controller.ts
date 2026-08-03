@@ -37,14 +37,17 @@ export const searchController = {
 
   searchTasksByStatus: async (req: Request, res: Response) => {
     try {
-      const { projectId } = req.params;
-      const { workspaceId, status } = req.query;
+      
+      const { workspaceId } = req.params;
+      const { projectId, status } = req.query;
       const userId = Number(res.locals.user.id);
 
       const data = await searchService.searchTasksByStatus(
         Number(workspaceId), Number(projectId), userId, status as any
       );
+      
       return res.json({ con: true, data });
+      
     } catch (error: any) {
       return res.status(error.message === "UNAUTHORIZED_ACCESS" ? 403 : 500).json({ con: false, msg: error.message });
     }
@@ -53,13 +56,14 @@ export const searchController = {
   searchUsers: async (req: Request, res: Response) => {
     try {
       const { workspaceId } = req.params;
+
+      const userId = Number(res.locals.user.id);
       
       const q = req.query.q as string || ""; 
       
-
-
       const users = await searchService.searchUsers(
         Number(workspaceId), 
+        userId,
         q,
       );
 
@@ -69,6 +73,7 @@ export const searchController = {
       return res.status(status).json({ con: false, msg: error.message });
     }
   },
+  
   searchWorkspaces: async (req: Request, res: Response) => {
     try {
 
@@ -85,5 +90,30 @@ export const searchController = {
     } catch (error: any) {
       return res.status(500).json({ con: false, msg: error.message });
     }
-}
+  },
+
+  searchProjectUsers: async (req: Request, res: Response) => {
+  try {
+    const { workspaceId, projectId } = req.params;
+    const { q } = req.query;
+
+    // 1. Number parse လုပ်ပြီး NaN မဖြစ်အောင် default 0 (or Check) ထားပေးပါ
+    const parsedWorkspaceId = Number(workspaceId) || 0;
+    const parsedProjectId = Number(projectId) || 0;
+    const searchString = typeof q === "string" ? q.trim() : "";
+
+    // 2. Service ထို့ဆီ parameter 3 ခုပဲ ပို့ပေးပါ (userId မလိုပါ)
+    const users = await searchService.searchProjectUsers(
+      parsedWorkspaceId,
+      parsedProjectId,
+      searchString
+    );
+
+    return res.json({ con: true, data: users });
+  } catch (error: any) {
+    console.error("Search Project Users Error:", error);
+    return res.status(500).json({ con: false, msg: error.message || "Failed to search project users" });
+  }
+},
+
 }

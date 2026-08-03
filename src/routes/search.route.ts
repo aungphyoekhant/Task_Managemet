@@ -9,3 +9,4 @@ router.get("/:workspaceId/projects", auth, searchController.searchProject);
 router.get("/:workspaceId/users", auth, searchController.searchUsers);
 router.get("/:workspaceId/:projectId/task", auth, searchController.searchTasksByTitle)
 router.get("/:workspaceId/taskStatus", auth, searchController.searchTasksByStatus)
+router.get("/:workspaceId/:projectId/projectUsers", auth, searchController.searchProjectUsers)

@@ -8,3 +8,8 @@ router.post("/register", userController.register);
 router.post("/login", userController.login);
 router.post("/logout", auth, userController.logout);
 router.post("/refresh", userController.refreshToken);
+router.post("/forgot-password", userController.forgotPassword);
+router.post("/verify-code", userController.verifyCode);
+router.post("/reset-password", userController.resetPassword);
+router.delete("/delete-account", auth, userController.deleteAccount);
+router.put("/change-password", auth, userController.changePassword )

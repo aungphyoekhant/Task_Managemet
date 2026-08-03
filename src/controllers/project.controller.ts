@@ -5,21 +5,60 @@ import { createProjectValidator, updateProjectValidator } from "../validators/pr
 import { ProjectStatus } from "../../generated/prisma/enums.js";
 
 export const projectController = {
+
   getAllProjects: async (req: Request, res: Response) => {
     try {
       const { workspaceId } = req.params;
-      if (!workspaceId) return res.status(400).json({ con: false, msg: "workspaceId is required in parmas" });
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      
+      const userId = (req as any).user?.id || res.locals.user?.id;
 
-      const projects = await projectService.getAllProjects(Number(workspaceId));
-      console.log(projects)
+      const { status } = req.query;
 
-      return res.status(200).json({ con: true, msg: "Projects Fetched", data: projects });
-    } catch (error) {
-      return res.status(500).json({ con: false, msg: "Error fetching projects", error });
+      if (!workspaceId) {
+        return res.status(400).json({ con: false, msg: "workspaceId is required in params" });
+      }
+
+      if (!userId) {
+        return res.status(401).json({ con: false, msg: "Unauthorized: User ID not found" });
+      }
+
+      const result = await projectService.getAllProjectsPaginated(
+        Number(workspaceId), 
+        Number(userId), 
+        page, 
+        limit,
+        status ? (status as string) : undefined
+      );
+
+      const hasNextPage = page < result.totalPages;
+      const nextCursor = hasNextPage ? page + 1 : undefined;
+
+      const responsePayload = {
+        data: result.projects,
+        workspaceUsers: result.workspaceUsers,
+        nextCursor: nextCursor,
+        hasNextPage: hasNextPage,
+        total: result.total,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+      };
+
+      console.log("Project API Response:", responsePayload);
+
+      return res.status(200).json({ 
+        con: true, 
+        msg: "Projects Fetched Successfully", 
+        ...responsePayload
+      });
+    } catch (error: any) {
+      console.error("--> GetProjects Error Details:", error);
+      return res.status(500).json({ con: false, msg: "Error fetching projects", error: error.message });
     }
   },
 
- getProjectById: async (req: Request, res: Response) => {
+  getProjectById: async (req: Request, res: Response) => {
     try {
       const projectId = Number(req.params.projectId);
       const workspaceId = Number(req.params.workspaceId); 

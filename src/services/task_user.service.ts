@@ -1,8 +1,8 @@
-import { prisma } from "../lib/prisma.js"
+import { prisma } from "../lib/prisma.js";
 import { auditService } from "./audit.service.js"; 
+import { io } from "../index.js"; 
 
 export const taskUserService = {
-
   assignUserToTask: async (payload: {
     taskId: number;
     userId: number;
@@ -12,9 +12,8 @@ export const taskUserService = {
   }) => {
     const { taskId, userId, currentUserId, workspaceId, projectId } = payload;
 
-    console.log(userId, workspaceId)
+    console.log(userId, workspaceId);
 
-    
     const task = await prisma.task.findUnique({
       where: { id: taskId },
     });
@@ -22,7 +21,6 @@ export const taskUserService = {
     if (!task) {
       throw new Error("Task not found.");
     }
-
 
     const workspaceMember = await prisma.workspaceUser.findFirst({
       where: { userId: userId, workspaceId: workspaceId },
@@ -33,12 +31,10 @@ export const taskUserService = {
     }
 
     return await prisma.$transaction(async (tx) => {
-      
       const existingAssignment = await tx.taskUser.findFirst({
         where: { taskId: taskId },
       });
 
-   
       if (existingAssignment) {
         await tx.taskUser.delete({
           where: { id: existingAssignment.id },
@@ -70,6 +66,10 @@ export const taskUserService = {
         },
       });
 
+      io.emit(`notification::${userId}`, {
+        message: `You have been assigned to task: "${task.title}"`,
+      });
+
       await auditService.ActivityLog({
         userId: currentUserId,
         action: "ASSIGN_TASK_USER",
@@ -82,38 +82,74 @@ export const taskUserService = {
   },
 
   removeUserFromTask: async (
-    taskId: number,
-    userId: number,
-    currentUserId: number,
-    workspaceId: number
-  ) => {
-    // 1. Assignment ရှိမရှိ စစ်ဆေးခြင်း
-    const taskUser = await prisma.taskUser.findFirst({
-      where: { taskId: taskId, userId: userId },
+  taskId: number,
+  userId: number,
+  currentUserId: number,
+  workspaceId: number
+) => {
+  const tId = Number(taskId);
+  const uId = Number(userId);
+  const actorUserId = Number(currentUserId);
+  const wId = Number(workspaceId);
+
+  const taskUser = await prisma.taskUser.findFirst({
+    where: { taskId: tId, userId: uId },
+    include: {
+      task: { select: { title: true } }
+    }
+  });
+
+  if (!taskUser) {
+    throw new Error("Assignment not found for this user on this task.");
+  }
+
+  const taskTitle = taskUser.task?.title || "Task";
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.taskUser.delete({
+      where: { id: taskUser.id },
     });
 
-    if (!taskUser) {
-      throw new Error("Assignment not found for this user on this task.");
-    }
+    const notification = await tx.notification.create({
+      data: {
+        workspaceId: wId,
+        userId: uId,
+        message: `You have been removed from task: "${taskTitle}"`,
+        isRead: false,
+      },
+    });
 
-    // 2. Transaction ဖြင့် ဖျက်ခြင်းနှင့် Activity Log မှတ်တမ်းတင်ခြင်း
-    return await prisma.$transaction(async (tx) => {
-      await tx.taskUser.delete({
-        where: { id: taskUser.id },
-      });
+    await tx.userNoti.create({
+      data: {
+        userId: uId,
+        notificationId: notification.id,
+      },
+    });
 
+    if (auditService?.ActivityLog) {
       await auditService.ActivityLog({
-        userId: currentUserId,
+        userId: actorUserId,
         action: "REMOVE_TASK_USER",
         entityType: "TASK",
-        entityId: taskId,
+        entityId: tId,
       });
+    }
 
-      return { message: "User successfully removed from task." };
+    return { message: "User successfully removed from task." };
+  });
+
+  if (io) {
+    io.emit(`notification::${uId}`, {
+      title: "Removed from Task",
+      message: `You have been removed from task: "${taskTitle}"`,
+      createdAt: new Date(),
     });
-  },
+  }
 
- getTaskAssignees: async (taskId: number) => {
+  return result;
+},
+
+  getTaskAssignees: async (taskId: number) => {
     return await prisma.taskUser.findMany({
       where: { taskId: taskId },
       include: {
@@ -130,7 +166,5 @@ export const taskUserService = {
         },
       },
     });
-  }
-
-  
+  },
 };

@@ -9,7 +9,7 @@ router.get("/allworkspacebyuserid", auth, workspaceController.getAllWorkspaceByU
 
 router.get("/allworkspaces", auth, workspaceController.getAllWorkspace);
 
-router.get("/workspace/:id", auth, checkWorkspaceRole(["OWNER"]), workspaceController.getWorkspace);
+router.get("/workspace/:id", auth,workspaceController.getWorkspaceById);
 
 
 router.post("/workspace", auth, upload.single("logo"), workspaceController.createWorkspace);

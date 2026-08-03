@@ -48,10 +48,12 @@ model User {
   email        String        @unique
   password     String
   refreshToken String?
-  isVerified   Boolean  @default(false)
+  isVerified   Boolean       @default(false)
   status       String        @default("ACTIVE")
   createdAt    DateTime      @default(now())
-  profile        Profile?
+  profile      Profile?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
   
   workspaceUsers WorkspaceUser[]
   projects       Project[]     @relation("CreatedProjects")
@@ -66,27 +68,29 @@ model User {
 }
 
 model Profile {
-  id        Int      @id @default(autoincrement())
-  name      String
-  phone     String?
-  avatar    String?
-  jobTitle  String?
-  bio       String?
-  userId    Int      @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          Int        @id @default(autoincrement())
+  name        String
+  phone       String?
+  avatar      String?
+  jobTitle    String?
+  bio         String?
+  userId      Int        @unique
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspaceId Int?
   workspace   Workspace? @relation(fields: [workspaceId], references: [id])
- 
+
+  @@index([userId])
+  @@index([workspaceId])
 }
 
 model Workspace {
-  id            Int          @id @default(autoincrement())
-  name          String
-  logo          String?
-  ownerId       Int?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  profile       Profile[]
+  id             Int             @id @default(autoincrement())
+  name           String
+  logo           String?
+  ownerId        Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  profile        Profile[]
   workspaceUsers WorkspaceUser[]
   projects       Project[]
   tasks          Task[]
@@ -105,51 +109,59 @@ model Invitation {
   invitedBy   Int
   invitedTo   Int?
   createdAt   DateTime         @default(now())
-  workspace   Workspace        @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
-  sender      User             @relation("InvitedBy", fields: [invitedBy], references: [id])
-  receiver    User?            @relation("InvitedTo", fields: [invitedTo], references: [id])
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sender      User             @relation("InvitedBy", fields: [invitedBy], references: [id], onDelete: Cascade)
+  receiver    User?            @relation("InvitedTo", fields: [invitedTo], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([invitedBy])
+  @@index([invitedTo])
+  @@index([email])
 }
 
 model WorkspaceUser {
   id          Int       @id @default(autoincrement())
   workspaceId Int
   userId      Int
-  role         Role          @default(MEMBER)
-  workspace   Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id],onDelete: Cascade)
+  role        Role      @default(MEMBER)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   @@unique([userId, workspaceId])
   @@index([workspaceId])
   @@index([userId])
 }
 
 model Project {
-  id          Int           @id @default(autoincrement())
-  workspaceId Int
-  createBy    Int
-  name        String
-  description String?
-  status      ProjectStatus @default(PENDING)
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime      @default(now())
-  workspace    Workspace     @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
-  creator      User          @relation("CreatedProjects", fields: [createBy], references: [id])
+  id           Int           @id @default(autoincrement())
+  workspaceId  Int
+  createBy     Int
+  name         String
+  description  String?
+  status       ProjectStatus @default(PENDING)
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime      @default(now())
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator      User          @relation("CreatedProjects", fields: [createBy], references: [id], onDelete: Cascade)
   projectUsers ProjectUser[]
   tasks        Task[]
-  taskUsers   TaskUser[]
+  taskUsers    TaskUser[]
+
+  @@index([workspaceId])
+  @@index([createBy])
 }
 
 model ProjectUser {
-  id        Int     @id @default(autoincrement())
-  projectId Int
-  addedById Int
-  userId    Int 
-  role      Role    @default(MEMBER)
+  id          Int       @id @default(autoincrement())
+  projectId   Int
+  addedById   Int
+  userId      Int 
+  role        Role      @default(MEMBER)
   workspaceId Int
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
   @@index([userId])
@@ -172,6 +184,9 @@ model Task {
   project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   comments    Comment[]
   taskUsers   TaskUser[] 
+
+  @@index([workspaceId])
+  @@index([projectId])
 }
 
 model TaskUser {
@@ -191,7 +206,8 @@ model TaskUser {
   @@unique([userId, taskId]) 
   @@index([workspaceId])
   @@index([projectId])   
-  @@index([userId])      
+  @@index([userId])
+  @@index([taskId])      
 }
 
 model Comment {
@@ -202,37 +218,50 @@ model Comment {
   content     String
   createdAt   DateTime @default(now())
   task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  author      User     @relation(fields: [authorId], references: [id])
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([taskId])
+  @@index([authorId])
 }
 
 model Notification {
-  id          Int       @id @default(autoincrement())
-  workspaceId Int
+  id          Int        @id @default(autoincrement())
+  workspaceId Int?     
   userId      Int
   message     String
-  isRead      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  workspace Workspace    @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
-  user      User         @relation(fields: [userId], references: [id])
-  userNotis UserNoti[]
+  isRead      Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade) 
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userNotis   UserNoti[]
+
+  @@index([workspaceId])
+  @@index([userId])
 }
 
-model UserNoti{
+model UserNoti {
   id             Int          @id @default(autoincrement())
   userId         Int
   notificationId Int
-  isRead          Boolean      @default(false)
-  user           User         @relation(fields: [userId], references: [id])
-  notification   Notification @relation(fields: [notificationId], references: [id],onDelete: Cascade)
+  message        String
+  isRead         Boolean      @default(false)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([notificationId])
 }
 
 model ActivityLog {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  action      String
-  entityType  String
-  entityId    Int
-  createdAt   DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id])
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  action     String
+  entityType String
+  entityId   Int
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
 }

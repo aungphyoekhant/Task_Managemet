@@ -53,7 +53,7 @@ export const commentController = {
     }
   },
 
- updateComment : async (req: Request, res: Response) => {
+  updateComment : async (req: Request, res: Response) => {
   try {
 
     const { error: paramsError, value: paramsValue } = updateCommentValidator.params.validate(req.params);
@@ -81,7 +81,7 @@ export const commentController = {
     console.error("Update Comment Error:", error);
     return res.status(500).json({ con: false, msg: error.message || "Error updating comment" });
   }
-},
+  },
 
   deleteComment: async (req: Request, res: Response) => {
     try {

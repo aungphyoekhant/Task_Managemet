@@ -17,6 +17,7 @@ export type UpdateTokenPayload = {
 
 export type RefreshTokenPayload = {
   id: number;
+  email: string;
   token: string;
 };
 
@@ -120,3 +121,53 @@ export type WorkspaceUserParams = {
   userId: number;
   workspaceId: number;
 };
+
+
+
+export interface DashboardParams {
+  workspaceId: number;
+  userId: number;
+  role: Role;
+}
+
+export interface TaskProgressItem {
+  id: number;
+  title: string;
+  status: TaskStatus;
+  priority: Priority;
+  progressPercentage: number;
+}
+
+export interface ProjectProgressSummary {
+  id: number;
+  name: string;
+  description: string | null;
+  status: ProjectStatus;
+  progressPercentage: number; // Project ရဲ့ Overall Progress %
+  taskOverview: {
+    totalTasks: number;
+    todoCount: number;
+    inProgressCount: number;
+    doneCount: number;
+  };
+  tasks: TaskProgressItem[];
+}
+
+export interface DashboardResponseData {
+  projectStats: {
+    totalProjects: number;
+    pendingProjects: number;
+    activeProjects: number;
+    completedProjects: number;
+  };
+  taskStats: {
+    totalTasks: number;
+    todoTasks: number;
+    inProgressTasks: number;
+    doneTasks: number;
+    overallTaskCompletionRate: number;
+  };
+  projects: ProjectProgressSummary[];
+}
+
+

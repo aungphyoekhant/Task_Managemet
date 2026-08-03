@@ -29,10 +29,11 @@ export const workspaceController = {
     }
   },
 
-  getWorkspace: async (req: Request, res: Response) => {
+  getWorkspaceById: async (req: Request, res: Response) => {
 
     const userId = Number(res.locals.user.id);
     const workspaceId = Number(req.params.id);
+    console.log("Fetching workspace - ID:", workspaceId, "UserID:", userId);
 
     const { error, value } = getWorkspaceValidator.validate({
       userId,
@@ -46,7 +47,7 @@ export const workspaceController = {
 
 
     try {
-      const workspace = await workspaceService.getWorkspace(userId, workspaceId);
+      const workspace = await workspaceService.getWorkspaceById(userId, workspaceId);
       res.status(200).json({
         con: true,
         msg: "Workspace fetched successfully",
@@ -139,7 +140,7 @@ export const workspaceController = {
 
     try {
       // 2. Fetch existing workspace to handle old file deletion
-      const existingWorkspace = await workspaceService.getWorkspace(userId, workspaceId);
+      const existingWorkspace = await workspaceService.getWorkspaceById(userId, workspaceId);
 
       if (!existingWorkspace) {
         if (file) deleteFile(file.path);
@@ -188,7 +189,7 @@ export const workspaceController = {
 
     try {
 
-      const workspace = await workspaceService.getWorkspace(userId, workspaceId);
+      const workspace = await workspaceService.getWorkspaceById(userId, workspaceId);
 
       if (!workspace) {
         return res.status(404).json({ msg: "Workspace not found" });

@@ -1,4 +1,6 @@
 import { prisma } from "../lib/prisma.js"
+import { auditService } from "./audit.service.js";
+import { io } from "../index.js";
 
 export const workspaceUserService = {
   getWorkspaceUsers: async (workspaceId: number) => {
@@ -24,49 +26,71 @@ export const workspaceUserService = {
     });
   },
 
- removeWorkspaceUser: async (workspaceId: number, userId: number) => {
-    return await prisma.$transaction(async (tx) => {
-      // 1. Workspace ထဲတွင် အဆိုပါ User ရှိမရှိ စစ်ဆေးခြင်း
-      const workspaceUser = await tx.workspaceUser.findUnique({
-        where: {
-          userId_workspaceId: {
-            workspaceId: workspaceId,
-            userId: userId,
-          },
-        },
-      });
-
-      if (!workspaceUser) {
-        throw new Error("User not found in this workspace");
-      }
-
-      // 2. Workspace ထဲမှ Member ကို ဖယ်ရှားမည် (WorkspaceUser ဖျက်မည်)
-      const deletedWorkspaceUser = await tx.workspaceUser.delete({
-        where: {
-          userId_workspaceId: {
-            workspaceId: workspaceId,
-            userId: userId,
-          },
-        },
-      });
-
-      // 3. ဤ Workspace ထဲတွင် အဆိုပါ User ပါဝင်နေသော ProjectUser များကိုပါ ရှင်းလင်းမည်
-      await tx.projectUser.deleteMany({
-        where: {
+  removeWorkspaceUser: async (workspaceId: number, userId: number, currentUserId: number) => {
+  return await prisma.$transaction(async (tx) => {
+    const workspaceUser = await tx.workspaceUser.findUnique({
+      where: {
+        userId_workspaceId: {
           workspaceId: workspaceId,
           userId: userId,
         },
-      });
-
-      // 4. ဤ Workspace ထဲတွင် အဆိုပါ User တာဝန်ယူထားသော TaskUser များကိုပါ အမှိုက်မကျန်အောင် ရှင်းလင်းမည်
-      await tx.taskUser.deleteMany({
-        where: {
-          workspaceId: workspaceId,
-          userId: userId,
-        },
-      });
-
-      return deletedWorkspaceUser;
+      },
     });
-  },
+
+    if (!workspaceUser) {
+      throw new Error("User not found in this workspace");
+    }
+
+    const deletedWorkspaceUser = await tx.workspaceUser.delete({
+      where: {
+        userId_workspaceId: {
+          workspaceId: workspaceId,
+          userId: userId,
+        },
+      },
+    });
+
+    await tx.projectUser.deleteMany({
+      where: {
+        workspaceId: workspaceId,
+        userId: userId,
+      },
+    });
+
+    await tx.taskUser.deleteMany({
+      where: {
+        workspaceId: workspaceId,
+        userId: userId,
+      },
+    });
+
+    const notification = await tx.notification.create({
+      data: {
+        workspaceId: workspaceId,
+        userId: userId,
+        message: `You have been removed from the workspace.`,
+      },
+    });
+
+    await tx.userNoti.create({
+      data: {
+        userId: userId,
+        notificationId: notification.id,
+      },
+    });
+
+    io.emit(`notification::${userId}`, {
+      message: `You have been removed from the workspace.`,
+    });
+
+    await auditService.ActivityLog({
+      userId: currentUserId,
+      action: "REMOVE_WORKSPACE_USER",
+      entityType: "WORKSPACE",
+      entityId: workspaceId,
+    });
+
+    return deletedWorkspaceUser;
+  });
+}
 };

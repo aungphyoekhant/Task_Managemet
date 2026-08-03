@@ -13,7 +13,7 @@
     "remove": "npx prisma migrate reset --force",
     "migrate": "npx prisma migrate dev --name init",
     "generate": "npx prisma generate",
-    "build" : "tsc"
+    "build": "tsc"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -28,6 +28,7 @@
     "multer": "^2.2.0",
     "nodemailer": "^9.0.1",
     "pg": "^8.22.0",
+    "socket.io": "^4.8.3",
     "winston": "^3.19.0",
     "zod": "^4.4.3"
   },

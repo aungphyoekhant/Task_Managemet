@@ -2,11 +2,15 @@ import { prisma } from "../lib/prisma.js"
 import { Role } from "../../generated/prisma/client.js";
 
 export const workspaceService = {
-  getWorkspace: async (userId: number, workspaceId: number) => {
-    return await prisma.workspace.findUnique({
+
+  getWorkspaceById: async (userId: number, workspaceId: number) => {
+    return await prisma.workspace.findFirst({
       where: {
         id: workspaceId,
-        ownerId: userId,
+        OR: [
+          { ownerId: userId },
+          { workspaceUsers: { some: { userId: userId } } }
+        ]
       },
       include: {
         projects: true,

@@ -71,32 +71,41 @@ export const taskController = {
     }
   },
 
- getTasks: async (req: Request, res: Response) => {
-    try {
-      const workspaceId = req.query.workspaceId || req.params.workspaceId;
-      const projectId = req.query.projectId || req.params.projectId;
-      const { cursor, limit } = req.query;
+  getTasks: async (req: Request, res: Response) => {
+      try {
+        const workspaceId = req.query.workspaceId || req.params.workspaceId;
+        const projectId = req.query.projectId || req.params.projectId;
+        
+        const userId = (req as any).user?.id || res.locals.user?.id;
 
-      console.log("--> Controller WorkspaceId:", workspaceId); // ဒီနေရာမှာ 14 သို့မဟုတ် တန်ဖိုးပေါ်လာရပါမယ်
-      console.log("--> Controller ProjectId:", projectId);     // ဒီနေရာမှာ 2 သို့မဟုတ် တန်ဖိုးပေါ်လာရပါမယ်
+        const { cursor, limit, status } = req.query;
 
-      if (!workspaceId || !projectId) {
-        return res.status(400).json({ con: false, msg: "workspaceId and projectId are required" });
+
+        if (!workspaceId || !projectId) {
+          return res.status(400).json({ con: false, msg: "workspaceId and projectId are required" });
+        }
+
+        if (!userId) {
+          return res.status(401).json({ con: false, msg: "Unauthorized: User ID not found" });
+        }
+
+        const result = await taskService.getTasks(
+          Number(workspaceId), 
+          Number(projectId), 
+          Number(userId), 
+          cursor ? Number(cursor) : undefined, 
+          limit ? Number(limit) : 10,
+          status ? (status as string) : undefined
+        );
+
+        console.log("Task Result:", result);
+
+        return res.status(200).json({ con: true, ...result });
+      } catch (error: any) {
+        console.error("--> GetTasks Error Details:", error); 
+        return res.status(500).json({ con: false, msg: error.message });
       }
-
-      const result = await taskService.getTasks(
-        Number(workspaceId), 
-        Number(projectId), 
-        cursor ? Number(cursor) : undefined, 
-        limit ? Number(limit) : 10
-      );
-
-      return res.status(200).json({ con: true, ...result });
-    } catch (error: any) {
-      console.error("--> GetTasks Error Details:", error); // Error ရဲ့ stack trace အမှန်ကို ကြည့်ရန်
-      return res.status(500).json({ con: false, msg: error.message });
-    }
-  },
+    },
 
   updateTask: async (req: Request, res: Response) => {
     try {

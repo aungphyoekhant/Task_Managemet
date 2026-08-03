@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { auditService } from "./audit.service.js";
+import { io } from "../index.js";
 
 type CommentType = {
   taskId: number;
@@ -8,6 +9,7 @@ type CommentType = {
 };
 
 export const commentService = {
+
  getCommentsByTaskId: async (taskId: number) => {
     return await prisma.comment.findMany({
       where: { taskId },
@@ -70,81 +72,111 @@ export const commentService = {
   },
 
   updateComment: async (taskId: number, commentId: number, authorId: number, content: string) => {
-    return await prisma.$transaction(async (tx) => {
-      const updatedComment = await tx.comment.update({
-        where: {taskId: taskId, id: commentId, authorId },
-        data: { content },
-      });
-
-      const notification = await tx.notification.create({
-        data: {
-          workspaceId: updatedComment.workspaceId,
-          userId: authorId,
-          message: `Comment updated to task ID ${updatedComment.taskId}`,
+  return await prisma.$transaction(async (tx) => {
+    const comment = await tx.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        task: {
+          select: { workspaceId: true },
         },
-      });
-
-      await tx.userNoti.create({
-        data: {
-          userId: authorId,
-          notificationId: notification.id,
-        },
-      });
-
-      await auditService.ActivityLog({
-        userId: authorId,
-        action: "UPDATE_COMMENT",
-        entityType: "TASK",
-        entityId: commentId,
-      });
-
-      return updatedComment;
+      },
     });
-  },
+
+    if (!comment || comment.taskId !== taskId) {
+      throw new Error("Comment not found.");
+    }
+
+    if (comment.authorId !== authorId) {
+      throw new Error("Unauthorized: Only the author can update this comment");
+    }
+
+    const updatedComment = await tx.comment.update({
+      where: { id: commentId },
+      data: { content },
+    });
+
+    const notification = await tx.notification.create({
+      data: {
+        workspaceId: comment.task.workspaceId,
+        userId: authorId,
+        message: `Comment updated on task ID ${taskId}`,
+      },
+    });
+
+    await tx.userNoti.create({
+      data: {
+        userId: authorId,
+        notificationId: notification.id,
+      },
+    });
+
+    io.emit(`notification::${authorId}`, {
+      message: `Comment updated on task ID ${taskId}`,
+    });
+
+    await auditService.ActivityLog({
+      userId: authorId,
+      action: "UPDATE_COMMENT",
+      entityType: "TASK",
+      entityId: commentId,
+    });
+
+    return updatedComment;
+  });
+},
 
   deleteComment: async (taskId: number, commentId: number, authorId: number) => {
-    try {
-      return await prisma.$transaction(async (tx) => {
-        
-        const existingComment = await tx.comment.findFirst({
-          where: { id: commentId, taskId: taskId, authorId },
-        });
+  return await prisma.$transaction(async (tx) => {
+    const comment = await tx.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        task: {
+          select: { workspaceId: true },
+        },
+      },
+    });
 
-        if (!existingComment) {
-          return null; 
-        }
-
-        const comment = await tx.comment.delete({
-          where: { id: commentId },
-        });
-
-        const notification = await tx.notification.create({
-          data: {
-            workspaceId: comment.workspaceId,
-            userId: authorId,
-            message: `Comment deleted to task ID ${comment.taskId}`,
-          },
-        });
-        
-        await tx.userNoti.create({
-          data: {
-            userId: authorId,
-            notificationId: notification.id,
-          },
-        });
-        
-        await auditService.ActivityLog({
-          userId: authorId,
-          action: "DELETE_COMMENT",
-          entityType: "TASK",
-          entityId: commentId,
-        });
-
-        return comment; 
-      });
-    } catch (error) {
-      console.error("Delete Comment Error:", error);
-      return null;
+    if (!comment || comment.taskId !== taskId) {
+      throw new Error("Comment not found.");
     }
-  },
+
+    if (comment.authorId !== authorId) {
+      throw new Error("Unauthorized: Only the author can delete this comment");
+    }
+
+    const deletedComment = await tx.comment.delete({
+      where: { id: commentId },
+    });
+
+    const notification = await tx.notification.create({
+      data: {
+        workspaceId: comment.task.workspaceId,
+        userId: authorId,
+        message: `Comment deleted on task ID ${taskId}`,
+      },
+    });
+
+    await tx.userNoti.create({
+      data: {
+        userId: authorId,
+        notificationId: notification.id,
+      },
+    });
+
+    io.emit(`notification::${authorId}`, {
+      message: `Comment deleted on task ID ${taskId}`,
+    });
+
+    await auditService.ActivityLog({
+      userId: authorId,
+      action: "DELETE_COMMENT",
+      entityType: "TASK",
+      entityId: commentId,
+    });
+
+    return deletedComment;
+  });
+},
 };
+
+

@@ -1,11 +1,30 @@
-import { prisma } from "../lib/prisma.js"
+import { prisma } from "../lib/prisma.js";
 import { Role } from "../../generated/prisma/client.js";
+import { io } from "../index.js";
 
 export const updateRoleServices = {
   updateRole: async (workspaceId: number, userId: number, newRole: string) => {
-    return await prisma.workspaceUser.updateMany({
+    const formattedRole = newRole.toUpperCase() as Role;
+
+    const result = await prisma.workspaceUser.updateMany({
       where: { workspaceId, userId },
-      data: { role: newRole.toUpperCase() as Role },
+      data: { role: formattedRole },
     });
+
+    if (result.count > 0) {
+      const notification = await prisma.notification.create({
+        data: {
+          userId,
+          workspaceId,
+          message: `Your role in workspace has been updated to "${formattedRole}"`,
+        },
+      });
+
+      if (typeof io !== "undefined" && io) {
+        io.emit(`notification::${userId}`, notification);
+      }
+    }
+
+    return result;
   },
 };

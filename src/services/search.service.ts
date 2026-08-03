@@ -35,10 +35,11 @@ export const searchService = {
   },
   
 
- searchUsers: async (workspaceId: number, q: string) => {
+ searchUsers: async (workspaceId: number, userId: number, q: string) => {
     return await prisma.workspaceUser.findMany({
       where: {
         workspaceId: Number(workspaceId),
+        userId: Number(userId),
         user: {
           OR: [
             { profile: { name: { contains: q, mode: "insensitive" } } },
@@ -67,5 +68,34 @@ export const searchService = {
       },
     });
   },
+
+searchProjectUsers: async (workspaceId: number, projectId: number, q: string) => {
+  return await prisma.projectUser.findMany({
+    where: {
+      projectId: projectId,
+      project: {
+        workspaceId: workspaceId,
+      },
+      // Search text (q) ရှိမှသာ user condition filter ဝင်စေရန်
+      ...(q
+        ? {
+            user: {
+              OR: [
+                { profile: { name: { contains: q, mode: "insensitive" } } },
+                { email: { contains: q, mode: "insensitive" } },
+              ],
+            },
+          }
+        : {}),
+    },
+    include: {
+      user: {
+        include: {
+          profile: true,
+        },
+      },
+    },
+  });
+},
 
 };
