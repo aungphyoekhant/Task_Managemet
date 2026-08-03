@@ -17,7 +17,6 @@ export type UpdateTokenPayload = {
 
 export type RefreshTokenPayload = {
   id: number;
-  email: string;
   token: string;
 };
 

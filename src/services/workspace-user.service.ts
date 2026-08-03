@@ -26,7 +26,7 @@ export const workspaceUserService = {
     });
   },
 
-  removeWorkspaceUser: async (workspaceId: number, userId: number, currentUserId: number) => {
+  removeWorkspaceUser: async (workspaceId: number, userId: number) => {
   return await prisma.$transaction(async (tx) => {
     const workspaceUser = await tx.workspaceUser.findUnique({
       where: {
@@ -73,10 +73,11 @@ export const workspaceUserService = {
     });
 
     await tx.userNoti.create({
-      data: {
-        userId: userId,
-        notificationId: notification.id,
-      },
+      data : {
+        userId : userId,
+        notificationId : notification.id,
+        message : `You have been removed from the workspace.`,
+      }
     });
 
     io.emit(`notification::${userId}`, {
@@ -84,7 +85,7 @@ export const workspaceUserService = {
     });
 
     await auditService.ActivityLog({
-      userId: currentUserId,
+      userId: userId,
       action: "REMOVE_WORKSPACE_USER",
       entityType: "WORKSPACE",
       entityId: workspaceId,

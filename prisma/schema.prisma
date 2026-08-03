@@ -229,7 +229,7 @@ model Notification {
   id          Int        @id @default(autoincrement())
   workspaceId Int?     
   userId      Int
-  message     String
+  message     String?
   isRead      Boolean    @default(false)
   createdAt   DateTime   @default(now())
   
@@ -245,7 +245,7 @@ model UserNoti {
   id             Int          @id @default(autoincrement())
   userId         Int
   notificationId Int
-  message        String
+  message        String?
   isRead         Boolean      @default(false)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)

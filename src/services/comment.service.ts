@@ -107,6 +107,7 @@ export const commentService = {
       data: {
         userId: authorId,
         notificationId: notification.id,
+        message: `Comment updated on task ID ${taskId}`,
       },
     });
 
@@ -160,6 +161,7 @@ export const commentService = {
       data: {
         userId: authorId,
         notificationId: notification.id,
+        message: `Comment deleted on task ID ${taskId}`,
       },
     });
 

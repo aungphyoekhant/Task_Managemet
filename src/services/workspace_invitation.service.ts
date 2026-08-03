@@ -82,12 +82,13 @@ export const workspaceInvitationService = {
     
     //const inviteLink = `http://localhost:5173/accept?token=${token}`;
 
-      // const frontendUrl = "https://taskmgr.denogameshop.com";
-      // const inviteLink = `${frontendUrl}/accept?token=${token}`;
+      const frontendUrl = "https://taskmgr.denogameshop.com";
+      const inviteLink = `${frontendUrl}/accept?token=${token}`;
 
     
-     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-     const inviteLink = `http://localhost:5173/accept?token=${token}`;
+    //  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    //  const inviteLink = `http://localhost:5173/accept?token=${token}`;
+
     const ownerName = workspace.profile?.[0]?.name || "Workspace Owner";
 
     const htmlContent = `

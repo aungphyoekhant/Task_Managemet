@@ -94,7 +94,7 @@ export const userController = {
 
       const payload = authService.verifyRefreshToken(refreshToken);
 
-      const newAccessToken = jwt.sign({ id: payload.id ,email: payload.email}, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "15m" });
+      const newAccessToken = jwt.sign({ id: payload.id}, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "15m" });
 
       console.log("New Access Token :", newAccessToken)
       return res.status(200).json({ con: true, accessToken: newAccessToken });
