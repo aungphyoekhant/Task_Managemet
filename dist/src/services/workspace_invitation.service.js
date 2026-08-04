@@ -63,7 +63,7 @@ export const workspaceInvitationService = {
             invitedBy: inviterName,
             invitedAt: new Date().toISOString()
         }, secret, { expiresIn: "48h" });
-        //const inviteLink = `http://localhost:5173/accept?token=${token}`;
+        // const inviteLink = `http://localhost:5173/accept?token=${token}`;
         const frontendUrl = "https://taskmgr.denogameshop.com";
         const inviteLink = `${frontendUrl}/accept?token=${token}`;
         //  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
